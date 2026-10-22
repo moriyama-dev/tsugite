@@ -4,7 +4,7 @@ import { Component, ViewChild } from '@angular/core'
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap'
 import { firstBy } from 'thenby'
 
-import { FileProvidersService, Platform, PlatformService, HostAppService, PromptModalComponent, PartialProfile, ProfilesService, ProfileSettingsComponent, FullyDefined, ProxifiedConfig, TranslateService } from 'tabby-core'
+import { FileProvidersService, Platform, PlatformService, HostAppService, PromptModalComponent, PartialProfile, ProfilesService, ProfileSettingsComponent, FullyDefined, ProxifiedConfig, TranslateService, ClaudeLauncherService } from 'tabby-core'
 import { LoginScriptsSettingsComponent } from 'tabby-terminal'
 import { PasswordStorageService } from '../services/passwordStorage.service'
 import { ForwardedPortConfig, SSHAlgorithmType, SSHProfile } from '../api'
@@ -121,6 +121,10 @@ export class SSHProfileSettingsComponent implements ProfileSettingsComponent<SSH
                 ref,
             ]
         }
+    }
+
+    isClaudeWorkdirValid (): boolean {
+        return ClaudeLauncherService.isValidWorkdir(this.profile.options.claudeWorkdir ?? '')
     }
 
     removePrivateKey (path: string) {

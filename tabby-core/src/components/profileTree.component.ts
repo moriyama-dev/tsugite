@@ -10,7 +10,11 @@ import { AppService } from '../services/app.service'
 import { PlatformService } from '../api/platform'
 import { ProfileProvider } from '../api/index'
 import { PartialProfileGroup, ProfileGroup, PartialProfile, Profile } from '../index'
+import { TailscaleService, TailscaleMachine, TailscaleState } from '../services/tailscale.service'
+import { ClaudeLauncherService } from '../services/claudeLauncher.service'
 import { BaseComponent } from './base.component'
+import { TailscaleMachineModalComponent } from './tailscaleMachineModal.component'
+import { PromptModalComponent } from './promptModal.component'
 
 interface CollapsableProfileGroup extends ProfileGroup {
     collapsed: boolean
@@ -30,6 +34,12 @@ export class ProfileTreeComponent extends BaseComponent {
     filteredProfiles: PartialProfile<Profile>[] = []
     @Input() filter = ''
 
+    machines: TailscaleMachine[] = []
+    visibleMachines: TailscaleMachine[] = []
+    hiddenOfflineCount = 0
+    tailscaleState: TailscaleState = 'loading'
+    tailscaleCollapsed = window.localStorage.tailscaleCollapsed === 'true'
+
 
     panelMinWidth = 200
     panelMaxWidth = 600
@@ -45,13 +55,34 @@ export class ProfileTreeComponent extends BaseComponent {
         private profilesService: ProfilesService,
         private translate: TranslateService,
         private ngbModal: NgbModal,
+        private tailscale: TailscaleService,
+        private claude: ClaudeLauncherService,
     ) {
         super()
     }
 
+    get tailscaleError (): string {
+        return this.tailscale.error
+    }
+
+    ngOnDestroy (): void {
+        this.tailscale.stop()
+        super.ngOnDestroy()
+    }
+
     async ngOnInit (): Promise<void> {
+        this.subscribeUntilDestroyed(this.tailscale.machines$, machines => {
+            this.machines = machines
+            this.updateVisibleMachines()
+        })
+        this.subscribeUntilDestroyed(this.tailscale.state$, state => this.tailscaleState = state)
+        this.tailscale.start()
+
         await this.loadTreeItems()
-        this.subscribeUntilDestroyed(this.config.changed$, () => this.loadTreeItems())
+        this.subscribeUntilDestroyed(this.config.changed$, () => {
+            this.loadTreeItems()
+            this.updateVisibleMachines()
+        })
         this.app.tabsChanged$.subscribe(() => this.tabStateChanged())
         this.app.activeTabChange$.subscribe(() => this.tabStateChanged())
     }
@@ -71,7 +102,14 @@ export class ProfileTreeComponent extends BaseComponent {
             }
         }
 
-        if (!this.config.store.terminal.showBuiltinProfiles) { groups = groups.filter(g => g.id !== 'built-in') }
+        // Local shells stay reachable from the new tab button; the side panel is for remote machines
+        groups = groups.filter(g => g.id !== 'built-in')
+        groups = groups.filter(g => g.editable || g.profiles?.length || g.id === 'ungrouped')
+        const ungrouped = groups.find(g => g.id === 'ungrouped')
+        if (ungrouped) {
+            ungrouped.name = this.translate.instant('SSH connections')
+            ungrouped.icon = 'fas fa-server'
+        }
 
         groups.sort((a, b) => a.name.localeCompare(b.name))
         groups.sort((a, b) => (a.id === 'built-in' || !a.editable ? 1 : 0) - (b.id === 'built-in' || !b.editable ? 1 : 0))
@@ -80,7 +118,7 @@ export class ProfileTreeComponent extends BaseComponent {
         this.rootGroups = this.profilesService.buildGroupTree(this.profileGroups)
     }
 
-    private async editProfile (profile: PartialProfile<Profile>): Promise<void> {
+    private async showProfileEditModal (profile: PartialProfile<Profile>): Promise<PartialProfile<Profile>|null> {
         const { EditProfileModalComponent } = window['nodeRequire']('tabby-settings')
         const modal = this.ngbModal.open(
             EditProfileModalComponent,
@@ -94,11 +132,39 @@ export class ProfileTreeComponent extends BaseComponent {
         modal.componentInstance.profileProvider = provider
 
         const result = await modal.result.catch(() => null)
-        if (!result) { return }
+        if (!result) { return null }
 
         result.type = provider.id
+        return result
+    }
+
+    private async editProfile (profile: PartialProfile<Profile>): Promise<void> {
+        const result = await this.showProfileEditModal(profile)
+        if (!result) { return }
 
         await this.profilesService.writeProfile(result)
+        await this.config.save()
+    }
+
+    async newSSHConnection (): Promise<void> {
+        const profiles = await this.profilesService.getProfiles({ includeBuiltin: true })
+        const template = profiles.find(p => p.id === 'ssh:template')
+        if (!template) { return }
+
+        const base: PartialProfile<Profile> = deepClone(template)
+        delete base.id
+        base.name = ''
+        base.isBuiltin = false
+        base.isTemplate = false
+
+        const result = await this.showProfileEditModal(base)
+        if (!result) { return }
+
+        if (!result.name) {
+            const cfgProxy = this.profilesService.getConfigProxyForProfile(result)
+            result.name = this.profilesService.providerForProfile(result)?.getSuggestedName(cfgProxy) ?? 'SSH'
+        }
+        await this.profilesService.newProfile(result)
         await this.config.save()
     }
 
@@ -165,13 +231,42 @@ export class ProfileTreeComponent extends BaseComponent {
                 label: this.translate.instant('Run'),
                 click: () => this.launchProfile(profile),
             },
+            ...profile.type === 'ssh' ? [{
+                type: 'normal' as const,
+                label: this.translate.instant('Start Claude Code'),
+                click: () => this.launchClaude(profile),
+            }] : [],
             {
                 type: 'normal',
                 label: this.translate.instant('Edit profile'),
                 click: () => this.editProfile(profile),
                 enabled: !(profile.isBuiltin ?? profile.isTemplate),
             },
+            {
+                type: 'normal',
+                label: this.translate.instant('Delete'),
+                click: () => this.deleteProfile(profile),
+                enabled: !(profile.isBuiltin ?? profile.isTemplate),
+            },
         ])
+    }
+
+    private async deleteProfile (profile: PartialProfile<Profile>): Promise<void> {
+        if ((await this.platform.showMessageBox(
+            {
+                type: 'warning',
+                message: this.translate.instant('Delete "{name}"?', profile),
+                buttons: [
+                    this.translate.instant('Delete'),
+                    this.translate.instant('Keep'),
+                ],
+                defaultId: 1,
+                cancelId: 1,
+            },
+        )).response === 0) {
+            await this.profilesService.deleteProfile(profile)
+            await this.config.save()
+        }
     }
 
     async groupContextMenu (group: PartialProfileGroup<CollapsableProfileGroup>, event: MouseEvent): Promise<void> {
@@ -199,7 +294,126 @@ export class ProfileTreeComponent extends BaseComponent {
         return this.profilesService.launchProfile(profile)
     }
 
+    async launchClaude (profile: PartialProfile<Profile>): Promise<void> {
+        await this.claude.openClaude(profile)
+    }
+
+    ////// TAILSCALE //////
+    refreshTailscale (): void {
+        this.tailscale.refresh()
+    }
+
+    toggleTailscaleCollapse (): void {
+        this.tailscaleCollapsed = !this.tailscaleCollapsed
+        window.localStorage.tailscaleCollapsed = String(this.tailscaleCollapsed)
+    }
+
+    async toggleShowOffline (): Promise<void> {
+        this.config.store.tsugite.showOffline = !this.config.store.tsugite.showOffline
+        await this.config.save()
+    }
+
+    private updateVisibleMachines (): void {
+        const q = this.filter.trim().toLowerCase()
+        const matching = this.machines.filter(m => !q || m.name.toLowerCase().includes(q) || m.dnsName.toLowerCase().includes(q))
+        this.visibleMachines = this.config.store.tsugite.showOffline ? matching : matching.filter(m => m.online)
+        this.hiddenOfflineCount = matching.length - this.visibleMachines.length
+    }
+
+    async openMachineTerminal (machine: TailscaleMachine): Promise<void> {
+        await this.claude.openTerminal(this.tailscale.toProfile(machine))
+    }
+
+    async openMachineClaude (machine: TailscaleMachine): Promise<void> {
+        await this.claude.openClaude(this.tailscale.toProfile(machine))
+    }
+
+    async editMachine (machine: TailscaleMachine): Promise<void> {
+        const modal = this.ngbModal.open(TailscaleMachineModalComponent)
+        modal.componentInstance.machine = machine
+        modal.componentInstance.settings = this.tailscale.getSettings(machine)
+        modal.componentInstance.defaultUser = this.tailscale.toProfile({ ...machine, name: '' }).options.user
+        const result = await modal.result.catch(() => null)
+        if (result) {
+            await this.tailscale.saveSettings(machine, result)
+        }
+    }
+
+    /** Copies the machine into the saved SSH connections, where every SSH option (port forwarding etc.) is available */
+    async saveMachineAsProfile (machine: TailscaleMachine): Promise<void> {
+        const profile = this.tailscale.toProfile(machine)
+        profile.options.host = machine.dnsName
+        await this.profilesService.newProfile(profile)
+        await this.config.save()
+    }
+
+    machineContextMenu (machine: TailscaleMachine, event: MouseEvent): void {
+        event.preventDefault()
+        this.platform.popupContextMenu([
+            {
+                type: 'normal',
+                label: this.translate.instant('Open terminal'),
+                click: () => this.openMachineTerminal(machine),
+            },
+            {
+                type: 'normal',
+                label: this.translate.instant('Start Claude Code'),
+                click: () => this.openMachineClaude(machine),
+            },
+            { type: 'separator' },
+            {
+                type: 'normal',
+                label: this.translate.instant('Settings'),
+                click: () => this.editMachine(machine),
+            },
+            {
+                type: 'normal',
+                label: this.translate.instant('Save as SSH connection'),
+                click: () => this.saveMachineAsProfile(machine),
+            },
+            {
+                type: 'normal',
+                label: this.translate.instant('Copy address'),
+                click: () => this.platform.setClipboard({ text: machine.dnsName }),
+            },
+        ])
+    }
+
+    tailscaleContextMenu (event: MouseEvent): void {
+        event.preventDefault()
+        this.platform.popupContextMenu([
+            {
+                type: 'normal',
+                label: this.translate.instant('Refresh'),
+                click: () => this.refreshTailscale(),
+            },
+            {
+                type: 'checkbox',
+                label: this.translate.instant('Show offline machines'),
+                checked: this.config.store.tsugite.showOffline,
+                click: () => this.toggleShowOffline(),
+            },
+            {
+                type: 'normal',
+                label: this.translate.instant('Default username…'),
+                click: () => this.editDefaultUser(),
+            },
+        ])
+    }
+
+    private async editDefaultUser (): Promise<void> {
+        const modal = this.ngbModal.open(PromptModalComponent)
+        modal.componentInstance.prompt = this.translate.instant('Username used when a machine has none set')
+        modal.componentInstance.value = this.config.store.tsugite.defaultUser
+        const result = await modal.result.catch(() => null)
+        if (result) {
+            this.config.store.tsugite.defaultUser = result.value.trim()
+            await this.config.save()
+        }
+    }
+
     async onFilterChange (): Promise<void> {
+        this.updateVisibleMachines()
         try {
             const q = this.filter.trim().toLowerCase()
 

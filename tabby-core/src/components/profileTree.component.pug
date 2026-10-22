@@ -9,6 +9,59 @@
     .profile-tree.h-100
         .d-flex.flex-column.p-2.profile-tree-container
 
+            //- Machines on the tailnet, read from the local tailscale CLI
+            a.tree-item(
+                (click)='toggleTailscaleCollapse()',
+                (contextmenu)='tailscaleContextMenu($event)',
+                href='#'
+            )
+                .fw-20
+                    .fa.fa-fw.fas.fa-chevron-right.ms-1.text-muted(*ngIf='tailscaleCollapsed')
+                    .fa.fa-fw.fas.fa-chevron-down.ms-1.text-muted(*ngIf='!tailscaleCollapsed')
+                .fw-20
+                    profile-icon.ms-1([icon]='"fas fa-network-wired"')
+                span.ms-2.me-auto Tailscale
+
+                .actions
+                    .action((click)='$event.stopPropagation(); refreshTailscale()', [title]='"Refresh"|translate')
+                        .fa.fa-fw.fas.fa-rotate
+
+            ng-container(*ngIf='!tailscaleCollapsed')
+                .tree-note(*ngIf='tailscaleState === "loading"', translate) Loading…
+                .tree-note(*ngIf='tailscaleState === "not-installed"', translate) Tailscale is not installed on this computer.
+                .tree-note(*ngIf='tailscaleState === "stopped"', translate) Tailscale is not connected.
+                .tree-note(*ngIf='tailscaleState === "error"') {{tailscaleError}}
+                .tree-note(*ngIf='tailscaleState === "ready" && !visibleMachines.length && !hiddenOfflineCount', translate) No machines
+
+                a.tree-item(
+                    *ngFor='let machine of visibleMachines',
+                    [class.offline]='!machine.online',
+                    (dblclick)='openMachineTerminal(machine)',
+                    (contextmenu)='machineContextMenu(machine, $event)',
+                    [style.paddingLeft.px]='20',
+                    [title]='machine.dnsName',
+                    href='#'
+                )
+                    .fw-20
+                        i.fa.fa-fw.fas.fa-circle.status-dot.ms-1([class.online]='machine.online')
+                    span.ms-2.no-wrap {{ machine.name }}
+
+                    .actions
+                        .action((click)='openMachineTerminal(machine)', [title]='"Open terminal"|translate')
+                            .fa.fa-fw.fas.fa-terminal
+                        .action((click)='openMachineClaude(machine)', [title]='"Start Claude Code"|translate')
+                            .fa.fa-fw.fas.fa-wand-magic-sparkles
+                        .action((click)='editMachine(machine)', [title]='"Settings"|translate')
+                            .fa.fa-fw.fas.fa-gear
+
+                a.tree-note.tree-note-link(
+                    *ngIf='hiddenOfflineCount',
+                    (click)='toggleShowOffline()',
+                    href='#',
+                    translate='Show {count} offline machines',
+                    [translateParams]='{count: hiddenOfflineCount}'
+                )
+
             ng-container(*ngFor='let group of rootGroups')
                 ng-container(*ngTemplateOutlet='recursiveGroup; context: {$implicit: group, depth: 0}')
 
@@ -26,7 +79,17 @@
                         profile-icon.ms-1([icon]='group.icon ?? "far fa-folder"', [color]='group?.color')
                     span.ms-2.me-auto {{ group.name || ("Ungrouped"|translate) }}
 
+                    .actions(*ngIf='group.id === "ungrouped"')
+                        .action((click)='$event.stopPropagation(); newSSHConnection()', [title]='"New SSH connection"|translate')
+                            .fa.fa-fw.fas.fa-plus
+
                 ng-container(*ngIf='!group.collapsed')
+                    a.tree-note.tree-note-link(
+                        *ngIf='group.id === "ungrouped" && !group.profiles?.length',
+                        (click)='newSSHConnection()',
+                        href='#',
+                        translate
+                    ) Add an SSH connection
                     ng-container(*ngFor='let profile of group.profiles')
                         a.tree-item(
                             (dblclick)='launchProfile(profile)',
@@ -39,8 +102,10 @@
                             span.ms-2.no-wrap {{ profile.name }}
 
                             .actions
-                                .action((click)='launchProfile(profile)')
+                                .action((click)='launchProfile(profile)', [title]='"Open terminal"|translate')
                                     .fa.fa-fw.fas.fa-play
+                                .action(*ngIf='profile.type === "ssh"', (click)='launchClaude(profile)', [title]='"Start Claude Code"|translate')
+                                    .fa.fa-fw.fas.fa-wand-magic-sparkles
 
                     ng-container(*ngFor='let child of group.children')
                         ng-container(*ngTemplateOutlet='recursiveGroup; context: {$implicit: child, depth: depth + 1}')

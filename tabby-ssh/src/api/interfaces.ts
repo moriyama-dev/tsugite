@@ -40,6 +40,8 @@ export interface SSHProfileOptions extends LoginScriptsOptions {
     cwd: string | null
     rememberCwd: boolean
     term?: string
+    /** Folder that "Start Claude Code" changes into on the remote machine */
+    claudeWorkdir: string
 }
 
 export enum PortForwardType {

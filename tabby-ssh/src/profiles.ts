@@ -47,6 +47,7 @@ export class SSHProfilesService extends QuickConnectProfileProvider<SSHProfile> 
             cwd: null,
             rememberCwd: false,
             term: 'xterm-256color',
+            claudeWorkdir: '',
         },
         clearServiceMessagesOnConnect: true,
     }

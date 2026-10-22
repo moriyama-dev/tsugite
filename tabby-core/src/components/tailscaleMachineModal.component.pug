@@ -1,0 +1,58 @@
+.modal-header
+    h3.m-0 {{machine.name}}
+    .text-muted.ms-auto {{machine.ip}} · {{machine.os}}
+
+.modal-body
+    .mb-3
+        label(translate) Username
+        input.form-control(
+            type='text',
+            autofocus,
+            [(ngModel)]='settings.user',
+            [placeholder]='defaultUser',
+        )
+
+    .mb-3
+        label(translate) Authentication
+        .btn-group.w-100(role='group')
+            input.btn-check(
+                type='radio',
+                name='tailscaleAuth',
+                id='tailscaleAuthTailscale',
+                [(ngModel)]='settings.auth',
+                [value]='"tailscale"'
+            )
+            label.btn.btn-secondary(for='tailscaleAuthTailscale', translate) Tailscale SSH (no key)
+            input.btn-check(
+                type='radio',
+                name='tailscaleAuth',
+                id='tailscaleAuthKey',
+                [(ngModel)]='settings.auth',
+                [value]='"key"'
+            )
+            label.btn.btn-secondary(for='tailscaleAuthKey', translate) SSH key
+        .form-text(*ngIf='settings.auth === "tailscale" && !machine.tailscaleSSH', translate) Tailscale SSH does not seem to be enabled on this machine. Run "tailscale up --ssh" on it, or use an SSH key.
+        .form-text(*ngIf='settings.auth === "key"', translate) The SSH agent and the keys in ~/.ssh are tried automatically. Pick a file only to use a specific key.
+
+    .mb-3(*ngIf='settings.auth === "key"')
+        label(translate) Private key
+        .input-group
+            input.form-control(type='text', readonly, [value]='settings.privateKey || ""', [placeholder]='"Automatic"|translate')
+            button.btn.btn-secondary((click)='pickPrivateKey()', translate) Choose…
+            button.btn.btn-secondary(*ngIf='settings.privateKey', (click)='settings.privateKey = undefined')
+                i.fas.fa-trash
+
+    .mb-3
+        label(translate) Claude Code working folder
+        input.form-control(
+            type='text',
+            [(ngModel)]='settings.workdir',
+            placeholder='~/projects/example',
+            [class.is-invalid]='!workdirValid',
+        )
+        .form-text(translate) The folder Claude Code starts in. Leave empty for the home folder.
+        .invalid-feedback(translate) Quotes, backslashes and $ cannot be used.
+
+.modal-footer
+    button.btn.btn-secondary((click)='cancel()', translate) Cancel
+    button.btn.btn-primary((click)='ok()', [disabled]='!workdirValid', translate) Save

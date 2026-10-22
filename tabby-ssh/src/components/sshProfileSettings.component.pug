@@ -193,6 +193,17 @@ ul.nav-tabs(ngbNav, #nav='ngbNav')
                     i.fas.fa-folder-open
                     span(translate) Add a private key
 
+            .mb-3
+                label(translate) Claude Code working folder
+                input.form-control(
+                    type='text',
+                    placeholder='~/projects/example',
+                    [(ngModel)]='profile.options.claudeWorkdir',
+                    [class.is-invalid]='!isClaudeWorkdirValid()',
+                )
+                .form-text(translate) The folder Claude Code starts in. Leave empty for the home folder.
+                .invalid-feedback(translate) Quotes, backslashes and $ cannot be used.
+
     li(ngbNavItem)
         a(ngbNavLink, translate) Ports
         ng-template(ngbNavContent)
