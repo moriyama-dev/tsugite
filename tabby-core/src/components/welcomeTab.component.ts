@@ -12,7 +12,6 @@ import { LocaleService } from '../services/locale.service'
     styleUrls: ['./welcomeTab.component.scss'],
 })
 export class WelcomeTabComponent extends BaseTabComponent {
-    enableGlobalHotkey = true
     allLanguages = LocaleService.allLanguages
 
     constructor (
@@ -28,9 +27,6 @@ export class WelcomeTabComponent extends BaseTabComponent {
     async closeAndDisable () {
         this.config.store.enableWelcomeTab = false
         this.config.store.pluginBlacklist = []
-        if (!this.enableGlobalHotkey) {
-            this.config.store.hotkeys['toggle-window'] = []
-        }
         await this.config.save()
         this.destroy()
     }

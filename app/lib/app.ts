@@ -9,7 +9,6 @@ import { Subject, throttleTime } from 'rxjs'
 
 import { saveConfig } from './config'
 import { Window, WindowOptions } from './window'
-import { pluginManager } from './pluginManager'
 import { PTYManager } from './pty'
 import { logMainError } from './errors'
 
@@ -50,14 +49,6 @@ export class Application {
 
         this.globalHotkey$.pipe(throttleTime(100)).subscribe(() => {
             this.onGlobalHotkey()
-        })
-
-        ;(promiseIpc as any).on('plugin-manager:install', (name, version) => {
-            return pluginManager.install(this.userPluginsPath, name, version)
-        })
-
-        ;(promiseIpc as any).on('plugin-manager:uninstall', (name) => {
-            return pluginManager.uninstall(this.userPluginsPath, name)
         })
 
         ;(promiseIpc as any).on('get-default-mac-shell', async () => {
@@ -211,7 +202,7 @@ export class Application {
             this.tray.setContextMenu(contextMenu)
         }
 
-        this.tray.setToolTip(`Tabby ${app.getVersion()}`)
+        this.tray.setToolTip(`Tsugite ${app.getVersion()}`)
     }
 
     disableTray (): void {
@@ -300,7 +291,7 @@ export class Application {
             {
                 label: 'Application',
                 submenu: [
-                    { role: 'about', label: 'About Tabby' },
+                    { role: 'about', label: 'About Tsugite' },
                     { type: 'separator' },
                     {
                         label: 'Preferences',
@@ -366,7 +357,7 @@ export class Application {
                     {
                         label: 'Website',
                         click () {
-                            shell.openExternal('https://eugeny.github.io/tabby')
+                            shell.openExternal('https://github.com/moriyama-dev/tsugite')
                         },
                     },
                 ],

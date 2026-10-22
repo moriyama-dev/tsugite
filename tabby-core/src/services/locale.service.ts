@@ -53,11 +53,16 @@ registerLocaleData(localeTR)
 registerLocaleData(localeUK)
 registerLocaleData(localeZH)
 
+/** Strings are shared with upstream Tabby, so the product name is swapped when they are loaded */
+function rebrand (text: string): string {
+    return text.replace(/Tabby/g, 'Tsugite')
+}
+
 function flattenMessageFormatTranslation (po: any) {
     const translation = {}
     po = po.translations['']
     for (const k of Object.keys(po)) {
-        translation[k] = po[k].msgstr[0] || k
+        translation[k] = rebrand(po[k].msgstr[0] || k)
     }
     return translation
 }
@@ -67,7 +72,7 @@ export class CustomMissingTranslationHandler extends MissingTranslationHandler {
 
     // eslint-disable-next-line @typescript-eslint/ban-types
     handle (params: { key: string, translateService: TranslateService, interpolateParams?: Object }): any {
-        const v = this.compiler.compile(params.key, params.translateService.currentLang)
+        const v = this.compiler.compile(rebrand(params.key), params.translateService.currentLang)
         if (typeof v === 'string') {
             return v
         }
@@ -217,7 +222,7 @@ export class LocaleService {
                 this._defaultTranslation = flattenMessageFormatTranslation(po)
             }
             this.translations[this.defaultLang][key] ??= this.compiler.compile(
-                this._defaultTranslation[key] || key,
+                rebrand(this._defaultTranslation[key] || key),
                 this.defaultLang,
             )
             return oldGetParsedResult(translations, key, interpolateParams ?? {})
@@ -231,6 +236,8 @@ export class LocaleService {
                 if (!lang && LocaleService.allLanguages.some(x => x.code === systemLanguage)) {
                     lang = systemLanguage
                 }
+                // Bare language codes such as "ja" pick the first matching regional variant
+                lang ??= LocaleService.allLanguages.find(x => x.code.split('-')[0] === systemLanguage)?.code ?? null
             }
         }
         lang ??= 'en-US'

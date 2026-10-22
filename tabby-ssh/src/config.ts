@@ -14,8 +14,6 @@ export class SSHConfigProvider extends ConfigProvider {
         },
         hotkeys: {
             'restart-ssh-session': [],
-            'launch-winscp': [],
-            'open-sftp': [],
         },
     }
 

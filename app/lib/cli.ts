@@ -24,7 +24,7 @@ interface ParserConfig {
 
 export function createParserConfig (cwd: string): ParserConfig {
     return {
-        usage: 'tabby [command] [arguments]',
+        usage: 'tsugite [command] [arguments]',
         commands: [
             {
                 command: 'open [directory]',

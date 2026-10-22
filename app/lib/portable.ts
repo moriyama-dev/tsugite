@@ -2,6 +2,10 @@ import * as path from 'path'
 import * as fs from 'fs'
 import * as electron from 'electron'
 
+electron.app.setName('Tsugite')
+electron.app.setPath('userData', path.join(electron.app.getPath('appData'), 'tsugite'))
+fs.mkdirSync(electron.app.getPath('userData'), { recursive: true })
+
 const appPath = path.dirname(electron.app.getPath('exe'))
 
 const portableData = path.join(appPath, 'data')

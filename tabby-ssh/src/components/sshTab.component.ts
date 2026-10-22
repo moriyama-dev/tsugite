@@ -1,7 +1,7 @@
 import * as russh from 'russh'
 import { marker as _ } from '@biesbjerg/ngx-translate-extract-marker'
 import colors from 'ansi-colors'
-import { Component, Injector, HostListener } from '@angular/core'
+import { Component, Injector } from '@angular/core'
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap'
 import { GetRecoveryTokenOptions, Platform, ProfilesService, RecoveryToken } from 'tabby-core'
 import { BaseTerminalTabComponent, ConnectableTerminalTabComponent } from 'tabby-terminal'
@@ -26,8 +26,6 @@ export class SSHTabComponent extends ConnectableTerminalTabComponent<SSHProfile>
     Platform = Platform
     sshSession: SSHSession|null = null
     session: SSHShellSession|null = null
-    sftpPanelVisible = false
-    sftpPath = '/'
     enableToolbar = true
     activeKIPrompt: KeyboardInteractivePrompt|null = null
 
@@ -58,14 +56,6 @@ export class SSHTabComponent extends ConnectableTerminalTabComponent<SSHProfile>
                     break
                 case 'restart-ssh-session':
                     this.reconnect()
-                    break
-                case 'launch-winscp':
-                    if (this.sshSession) {
-                        this.ssh.launchWinSCP(this.sshSession)
-                    }
-                    break
-                case 'open-sftp':
-                    this.openSFTP()
                     break
             }
         })
@@ -233,18 +223,6 @@ export class SSHTabComponent extends ConnectableTerminalTabComponent<SSHProfile>
                 cancelId: 1,
             },
         )).response === 0
-    }
-
-    async openSFTP (): Promise<void> {
-        this.sftpPath = await this.session?.getWorkingDirectory() ?? this.sftpPath
-        setTimeout(() => {
-            this.sftpPanelVisible = true
-        }, 100)
-    }
-
-    @HostListener('click')
-    onClick (): void {
-        this.sftpPanelVisible = false
     }
 
     protected isSessionExplicitlyTerminated (): boolean {

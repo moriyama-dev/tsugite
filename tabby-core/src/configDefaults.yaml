@@ -40,10 +40,10 @@ profileDefaults:
   ssh:
     disableDynamicTitle: true
 recoverTabs: true
-enableAnalytics: true
+enableAnalytics: false
 enableWelcomeTab: true
 electronFlags: []
-enableAutomaticUpdates: true
+enableAutomaticUpdates: false
 hideTray: false
 version: 1
 vault: null
@@ -60,4 +60,10 @@ hacks:
   globalHotkey: null
 language: null
 defaultQuickConnectProvider: "ssh"
-showProfileTree: false
+showProfileTree: true
+tsugite:
+  # Used for Tailscale machines that have no username of their own; empty means the local username
+  defaultUser: ''
+  showOffline: false
+  machines:
+    __nonStructural: true

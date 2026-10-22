@@ -12,7 +12,6 @@ process.env.TABBY_PLUGINS ??= ''
 process.env.TABBY_CONFIG_DIRECTORY ??= app.getPath('userData')
 
 process.setSourceMapsEnabled(true)
-import './sentry'
 import './lru'
 import { parseArgs } from './cli'
 import { Application } from './app'
@@ -35,13 +34,13 @@ process.mainModule = module
 
 const application = new Application(configStore)
 
-// Register tabby:// URL scheme
+// Register tsugite:// URL scheme
 if (process.defaultApp) {
     if (process.argv.length >= 2) {
-        app.setAsDefaultProtocolClient('tabby', process.execPath, [process.argv[1]])
+        app.setAsDefaultProtocolClient('tsugite', process.execPath, [process.argv[1]])
     }
 } else {
-    app.setAsDefaultProtocolClient('tabby')
+    app.setAsDefaultProtocolClient('tsugite')
 }
 
 ipcMain.on('app:new-window', () => {
@@ -110,7 +109,7 @@ app.on('ready', async () => {
         window.focus()
     } catch (err) {
         logMainError('Failed to open window', err)
-        dialog.showErrorBox('Tabby failed to start', String(err?.stack ?? err))
+        dialog.showErrorBox('Tsugite failed to start', String(err?.stack ?? err))
         app.exit(1)
     }
 })

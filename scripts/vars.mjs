@@ -22,14 +22,10 @@ export const builtinPlugins = [
     'tabby-core',
     'tabby-settings',
     'tabby-terminal',
-    'tabby-web',
     'tabby-community-color-schemes',
     'tabby-ssh',
-    'tabby-serial',
-    'tabby-telnet',
     'tabby-local',
     'tabby-electron',
-    'tabby-plugin-manager',
     'tabby-linkifier',
     'tabby-auto-sudo-password',
 ]
@@ -43,8 +39,6 @@ export const packagesWithDocs = [
 
 export const allPackages = [
     ...builtinPlugins,
-    'web',
-    'tabby-web-demo',
 ]
 
 export const bundledModules = [

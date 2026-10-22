@@ -38,7 +38,6 @@ files:
 - '!**/node_modules/node-pty/prebuilds/*/conpty'
 extraResources:
 - builtin-plugins
-- extras
 asarUnpack:
 - 'dist/*.map'
 - node_modules/keytar/build/Release/*.node
