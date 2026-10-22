@@ -1,0 +1,227 @@
+name: Release
+
+on:
+  push:
+    tags:
+      # Version tags such as 0.1.0 (no "v" prefix), matching app/package.json
+      - '[0-9]+.[0-9]+.[0-9]+'
+  workflow_dispatch:
+    inputs:
+      prerelease:
+        description: 'Mark the release as a pre-release'
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  version:
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - id: version
+        env:
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          APP_VERSION="$( node -p "require('./app/package.json').version" )"
+          if [[ "${REF_TYPE}" == "tag" && "${REF_NAME}" != "${APP_VERSION}" ]]; then
+            echo "Tag ${REF_NAME} does not match app/package.json (${APP_VERSION})" >&2
+            exit 1
+          fi
+          echo "version=${APP_VERSION}" >> "${GITHUB_OUTPUT}"
+          echo "Release version: ${APP_VERSION}"
+
+  linux:
+    needs: version
+    # The oldest supported Ubuntu, so the native modules link against an old glibc
+    runs-on: ubuntu-22.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y libfontconfig1-dev libsecret-1-dev
+          npm install -g yarn
+
+      - name: Install packages
+        run: yarn --network-timeout 1000000
+
+      - name: Webpack
+        run: yarn run build
+
+      - name: Prepackage plugins
+        run: node scripts/prepackage-plugins.mjs
+
+      - name: Build the packages
+        run: node scripts/build-linux.mjs
+        env:
+          USE_HARD_LINKS: false
+
+      - name: Collect the packages
+        env:
+          RELEASE_VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          mkdir out
+          mv "dist/tsugite-${RELEASE_VERSION}-linux-x64.deb" "dist/tsugite-${RELEASE_VERSION}-linux-x64.tar.gz" out/
+          cd out
+          for f in *; do sha256sum "${f}" > "${f}.sha256"; done
+          dpkg-deb --info ./*.deb
+          ls -la
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: linux
+          path: out/*
+          if-no-files-found: error
+
+  macos:
+    needs: version
+    runs-on: macos-15
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        # Both are built on the Apple Silicon runner; x86_64 is cross-compiled
+        arch: [arm64, x86_64]
+    env:
+      ARCH: ${{ matrix.arch }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+
+      - name: Install packages
+        run: |
+          npm install -g yarn
+          yarn --network-timeout 1000000
+
+      - name: Webpack
+        run: yarn run build
+
+      - name: Prepackage plugins
+        run: node scripts/prepackage-plugins.mjs
+
+      # electron-builder looks for Electron next to the app's own modules
+      - run: ln -s ../../node_modules/electron app/node_modules
+
+      - name: Build the packages
+        run: node scripts/build-macos.mjs
+        env:
+          USE_HARD_LINKS: false
+
+      - name: Collect the packages
+        env:
+          RELEASE_VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          mkdir out
+          mv "dist/tsugite-${RELEASE_VERSION}-macos-${ARCH}.dmg" "dist/tsugite-${RELEASE_VERSION}-macos-${ARCH}.zip" out/
+          cd out
+          for f in *; do shasum -a 256 "${f}" > "${f}.sha256"; done
+          ls -la
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: macos-${{ matrix.arch }}
+          path: out/*
+          if-no-files-found: error
+
+  publish:
+    needs: [version, linux, macos]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_VERSION: ${{ needs.version.outputs.version }}
+          # Tag pushes make normal releases; manual runs can be pre-releases
+          PRERELEASE: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.prerelease == 'true' }}
+        run: |
+          ls -la dist
+          (cd dist && sha256sum -c ./*.sha256)
+
+          NOTES=".github/release-notes/${RELEASE_VERSION}.md"
+          if [[ ! -f "${NOTES}" ]]; then
+            NOTES="$( mktemp )"
+            printf 'Tsugite %s\n' "${RELEASE_VERSION}" > "${NOTES}"
+          fi
+
+          FLAGS=()
+          if [[ "${PRERELEASE}" == "true" ]]; then
+            FLAGS+=(--prerelease)
+          fi
+
+          if gh release view "${RELEASE_VERSION}" > /dev/null 2>&1; then
+            gh release upload "${RELEASE_VERSION}" dist/* --clobber
+          else
+            gh release create "${RELEASE_VERSION}" dist/* \
+              --title "Tsugite ${RELEASE_VERSION}" \
+              --notes-file "${NOTES}" \
+              --target "${GITHUB_SHA}" \
+              "${FLAGS[@]}"
+          fi
+
+  homebrew:
+    # Update the cask in this repository (tapped with
+    # `brew tap moriyama-dev/tsugite https://github.com/moriyama-dev/tsugite`)
+    needs: [version, publish]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+
+      - name: Update Casks/tsugite.rb
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          gh release download "${RELEASE_VERSION}" --pattern "tsugite-${RELEASE_VERSION}-macos-*.dmg.sha256" --dir "${RUNNER_TEMP}"
+          ARM="$( cut -d' ' -f1 "${RUNNER_TEMP}/tsugite-${RELEASE_VERSION}-macos-arm64.dmg.sha256" )"
+          INTEL="$( cut -d' ' -f1 "${RUNNER_TEMP}/tsugite-${RELEASE_VERSION}-macos-x86_64.dmg.sha256" )"
+          sed -i -e "s/^  version \".*\"/  version \"${RELEASE_VERSION}\"/" \
+                 -e "s/^  sha256 arm:   \".*\",/  sha256 arm:   \"${ARM}\",/" \
+                 -e "s/^         intel: \".*\"/         intel: \"${INTEL}\"/" Casks/tsugite.rb
+          git diff
+          if git diff --quiet; then exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "Update the Homebrew cask to ${RELEASE_VERSION}"
+          git push origin HEAD:main

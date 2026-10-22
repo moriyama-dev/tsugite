@@ -1,14 +1,17 @@
 {
-  "name": "tabby",
-  "description": "A terminal for a modern age",
+  "name": "tsugite",
+  "productName": "Tsugite",
+  "description": "A terminal-first SSH client with Tailscale and Claude Code built in",
   "private": true,
-  "repository": "https://github.com/Eugeny/tabby",
+  "repository": "https://github.com/moriyama-dev/tsugite",
+  "homepage": "https://github.com/moriyama-dev/tsugite",
   "author": {
-    "name": "Tabby Developers",
-    "email": "e@ajenti.org"
+    "name": "moriyama-dev",
+    "email": "7315004+moriyama-dev@users.noreply.github.com"
   },
+  "license": "MIT",
   "main": "dist/main.js",
-  "version": "1.0.0-alpha.1",
+  "version": "0.1.0",
   "scripts": {
     "postinstall": "patch-package",
     "build": "webpack --progress --color --display-modules",
@@ -26,6 +29,7 @@
     "glasstron": "0.1.1",
     "js-yaml": "4.1.0",
     "keytar": "^7",
+    "lru-cache": "^11",
     "mz": "^2",
     "native-process-working-directory": "^1",
     "node-abi": "4.35.0",

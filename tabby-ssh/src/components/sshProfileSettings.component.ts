@@ -124,7 +124,7 @@ export class SSHProfileSettingsComponent implements ProfileSettingsComponent<SSH
     }
 
     isClaudeWorkdirValid (): boolean {
-        return ClaudeLauncherService.isValidWorkdir(this.profile.options.claudeWorkdir ?? '')
+        return ClaudeLauncherService.isValidWorkdir(this.profile.options.claudeWorkdir)
     }
 
     removePrivateKey (path: string) {

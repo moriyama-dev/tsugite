@@ -59,7 +59,7 @@ export class TailscaleService {
     }
 
     async refresh (): Promise<void> {
-        let output: string
+        let output = ''
         try {
             output = await this.run(['status', '--json'])
         } catch (e) {
@@ -116,6 +116,8 @@ export class TailscaleService {
             options: {
                 host: machine.ip,
                 port: 22,
+                // Empty strings mean "not set", so fall through them as well
+                // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
                 user: settings.user || this.config.store.tsugite.defaultUser || this.localUser(),
                 // Leaving auth unset tries "none" first (which is how Tailscale SSH logs in), then the agent and keys
                 auth: null,

@@ -27,7 +27,7 @@ app-root {
 
       .bar {
         transition: 1s ease-out width;
-        background: #a1c5e4;
+        background: #e2c79c;
         height: 3px;
         box-shadow: 0 0 2px #ffffff1f;
       }
@@ -44,8 +44,8 @@ app-root {
 
 
 .tabby-logo {
-  width: 120px;
-  height: 120px;
+  width: 160px;
+  height: 60px;
   background: url('../assets/logo.svg');
   background-repeat: none;
   background-size: contain;
@@ -54,7 +54,7 @@ app-root {
 
 
 .tabby-title {
-  color: #a1c5e4;
+  color: #e2c79c;
   font-family: 'Source Sans Pro';
   text-align: center;
   font-weight: normal;

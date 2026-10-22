@@ -2572,3 +2572,118 @@ msgctxt "[Dynamic] port forwarding"
 msgid "id.port-forwarding.dynamic"
 msgstr "ダイナミック"
 
+#: Tsugite
+msgid "Claude Code is not installed on this machine. Install it now?"
+msgstr "このマシンには Claude Code が入っていません。今すぐ導入しますか？"
+
+#: Tsugite
+msgid "Authentication"
+msgstr "認証"
+
+#: Tsugite
+msgid "Tailscale SSH (no key)"
+msgstr "Tailscale SSH（鍵なし）"
+
+#: Tsugite
+msgid "SSH key"
+msgstr "SSH 鍵"
+
+#: Tsugite
+msgid "Tailscale SSH does not seem to be enabled on this machine. Run \"tailscale up --ssh\" on it, or use an SSH key."
+msgstr "このマシンでは Tailscale SSH が有効になっていないようです。マシン側で \"tailscale up --ssh\" を実行するか、SSH 鍵を使ってください。"
+
+#: Tsugite
+msgid "The SSH agent and the keys in ~/.ssh are tried automatically. Pick a file only to use a specific key."
+msgstr "SSH エージェントと ~/.ssh の鍵は自動で試します。特定の鍵を使うときだけファイルを選んでください。"
+
+#: Tsugite
+msgid "Private key"
+msgstr "秘密鍵"
+
+#: Tsugite
+msgid "Choose…"
+msgstr "選択…"
+
+#: Tsugite
+msgid "Claude Code working folder"
+msgstr "Claude Code の作業フォルダ"
+
+#: Tsugite
+msgid "The folder Claude Code starts in. Leave empty for the home folder."
+msgstr "Claude Code を起動するフォルダです。空欄ならホームフォルダで起動します。"
+
+#: Tsugite
+msgid "Quotes, backslashes and $ cannot be used."
+msgstr "引用符、バックスラッシュ、$ は使えません。"
+
+#: Tsugite
+msgid "Refresh"
+msgstr "更新"
+
+#: Tsugite
+msgid "Loading…"
+msgstr "読み込み中…"
+
+#: Tsugite
+msgid "Tailscale is not installed on this computer."
+msgstr "このコンピューターには Tailscale が入っていません。"
+
+#: Tsugite
+msgid "Tailscale is not connected."
+msgstr "Tailscale に接続していません。"
+
+#: Tsugite
+msgid "No machines"
+msgstr "マシンがありません"
+
+#: Tsugite
+msgid "Open terminal"
+msgstr "ターミナルを開く"
+
+#: Tsugite
+msgid "Start Claude Code"
+msgstr "Claude Code を起動"
+
+#: Tsugite
+msgid "Show {count} offline machines"
+msgstr "オフラインの {count} 台を表示"
+
+#: Tsugite
+msgid "New SSH connection"
+msgstr "新しい SSH 接続"
+
+#: Tsugite
+msgid "Add an SSH connection"
+msgstr "SSH 接続を追加"
+
+#: Tsugite
+msgid "SSH connections"
+msgstr "SSH 接続"
+
+#: Tsugite
+msgid "Save as SSH connection"
+msgstr "SSH 接続として保存"
+
+#: Tsugite
+msgid "Copy address"
+msgstr "アドレスをコピー"
+
+#: Tsugite
+msgid "Show offline machines"
+msgstr "オフラインのマシンを表示"
+
+#: Tsugite
+msgid "Default username…"
+msgstr "既定のユーザー名…"
+
+#: Tsugite
+msgid "Username used when a machine has none set"
+msgstr "マシンごとに設定していないときに使うユーザー名"
+
+#: Tsugite
+msgid "Run"
+msgstr "実行"
+
+#: Tsugite
+msgid "Edit profile"
+msgstr "プロファイルを編集"

@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Menu bar template: the same joint, chunkier so it survives 16px -->
+  <path d="M276 106 H504 V406 H276 V336 L400 376 V136 L276 176 Z" fill="#000"/>
+  <path d="M8 106 H236 V230.9 L360 190.9 V321.1 L236 281.1 V406 H8 Z" fill="#000"/>
+</svg>

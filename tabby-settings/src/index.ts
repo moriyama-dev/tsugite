@@ -58,6 +58,7 @@ import { HotkeySettingsTabProvider, WindowSettingsTabProvider, VaultSettingsTabP
         ShowSecretModalComponent,
     ],
 })
+// eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export default class SettingsModule {
     constructor (
         app: AppService,

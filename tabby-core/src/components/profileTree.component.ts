@@ -104,7 +104,7 @@ export class ProfileTreeComponent extends BaseComponent {
 
         // Local shells stay reachable from the new tab button; the side panel is for remote machines
         groups = groups.filter(g => g.id !== 'built-in')
-        groups = groups.filter(g => g.editable || g.profiles?.length || g.id === 'ungrouped')
+        groups = groups.filter(g => !!g.editable || !!g.profiles?.length || g.id === 'ungrouped')
         const ungrouped = groups.find(g => g.id === 'ungrouped')
         if (ungrouped) {
             ungrouped.name = this.translate.instant('SSH connections')

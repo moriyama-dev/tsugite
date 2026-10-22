@@ -1,0 +1,118 @@
+name: APT repository
+
+on:
+  # Rebuild the repository after each successful release build
+  workflow_run:
+    workflows: ['Release']
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+env:
+  # Fingerprint of the Tsugite APT signing key (apt/tsugite-archive-keyring.asc)
+  SIGNING_KEY_FINGERPRINT: A2FB6B56D465D12886E7A816AE4104EAABDDB0FC
+  # Number of releases whose .deb files are kept in the repository
+  KEEP_RELEASES: 2
+
+jobs:
+  build:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-24.04
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install tools
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y dpkg-dev apt-utils gnupg
+
+      - name: Download the .deb files of the latest releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          mkdir -p downloads site/pool/main/t/tsugite
+          for tag in $( gh release list --exclude-drafts --limit "${KEEP_RELEASES}" --json tagName --jq '.[].tagName' ); do
+            gh release download "${tag}" --pattern '*.deb' --pattern '*.deb.sha256' --dir downloads
+          done
+          cd downloads
+          sha256sum -c ./*.deb.sha256
+          mv ./*.deb ../site/pool/main/t/tsugite/
+          ls -la ../site/pool/main/t/tsugite
+
+      - name: Build the repository indexes
+        run: |
+          cd site
+          mkdir -p dists/stable/main/binary-amd64
+          dpkg-scanpackages --arch amd64 --multiversion pool/ > dists/stable/main/binary-amd64/Packages
+          gzip -9kn dists/stable/main/binary-amd64/Packages
+          apt-ftparchive \
+            -o APT::FTPArchive::Release::Origin=Tsugite \
+            -o APT::FTPArchive::Release::Label=Tsugite \
+            -o APT::FTPArchive::Release::Suite=stable \
+            -o APT::FTPArchive::Release::Codename=stable \
+            -o APT::FTPArchive::Release::Architectures=amd64 \
+            -o APT::FTPArchive::Release::Components=main \
+            -o APT::FTPArchive::Release::Description="Tsugite SSH client" \
+            release dists/stable > "${RUNNER_TEMP}/Release"
+          mv "${RUNNER_TEMP}/Release" dists/stable/Release
+          cat dists/stable/Release
+          grep '^Package\|^Version\|^Filename' dists/stable/main/binary-amd64/Packages
+
+      - name: Sign the repository
+        env:
+          APT_SIGNING_KEY: ${{ secrets.APT_SIGNING_KEY }}
+        run: |
+          export GNUPGHOME="$( mktemp -d )"
+          printf '%s\n' "${APT_SIGNING_KEY}" | gpg --batch --quiet --import
+          gpg --batch --quiet --import apt/tsugite-archive-keyring.asc
+
+          IMPORTED=$( gpg --batch --with-colons --list-secret-keys | awk -F: '$1 == "fpr" { print $10; exit }' )
+          if [[ "${IMPORTED}" != "${SIGNING_KEY_FINGERPRINT}" ]]; then
+            echo "The signing key does not match the published public key" >&2
+            exit 1
+          fi
+
+          gpg --batch --yes --pinentry-mode loopback --passphrase '' --local-user "${SIGNING_KEY_FINGERPRINT}" \
+            --clearsign --output site/dists/stable/InRelease site/dists/stable/Release
+          gpg --batch --yes --pinentry-mode loopback --passphrase '' --local-user "${SIGNING_KEY_FINGERPRINT}" \
+            --armor --detach-sign --output site/dists/stable/Release.gpg site/dists/stable/Release
+
+          gpg --batch --verify site/dists/stable/InRelease
+          gpg --batch --verify site/dists/stable/Release.gpg site/dists/stable/Release
+
+          gpgconf --kill all
+          rm -rf "${GNUPGHOME}"
+
+      - name: Add the public key and the index page
+        run: |
+          cp apt/tsugite-archive-keyring.asc apt/index.html site/
+          GNUPGHOME="$( mktemp -d )" gpg --batch --dearmor --output site/tsugite-archive-keyring.gpg apt/tsugite-archive-keyring.asc
+          touch site/.nojekyll
+          find site -type f | sort
+
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-24.04
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
