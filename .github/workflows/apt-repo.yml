@@ -48,7 +48,10 @@ jobs:
           done
           cd downloads
           sha256sum -c ./*.deb.sha256
-          mv ./*.deb ../site/pool/main/t/tsugite/
+          # dpkg-scanpackages --arch only picks up Debian-style names (<package>_<version>_<arch>.deb)
+          for f in ./*.deb; do
+            mv "${f}" "../site/pool/main/t/tsugite/$( dpkg-deb -f "${f}" Package )_$( dpkg-deb -f "${f}" Version )_$( dpkg-deb -f "${f}" Architecture ).deb"
+          done
           ls -la ../site/pool/main/t/tsugite
 
       - name: Build the repository indexes
