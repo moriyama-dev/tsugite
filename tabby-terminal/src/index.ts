@@ -20,6 +20,8 @@ import { TerminalToolbarComponent } from './components/terminalToolbar.component
 import { ColorSchemeSelectorComponent } from './components/colorSchemeSelector.component'
 import { InputProcessingSettingsComponent } from './components/inputProcessingSettings.component'
 import { ColorSchemeSettingsForModeComponent } from './components/colorSchemeSettingsForMode.component'
+import { AssistPanelComponent } from './components/assistPanel.component'
+import { SnippetsModalComponent } from './components/snippetsModal.component'
 
 import { TerminalDecorator } from './api/decorator'
 import { TerminalContextMenuItemProvider } from './api/contextMenuProvider'
@@ -78,6 +80,8 @@ import { DefaultColorSchemes } from './colorSchemes'
         TerminalToolbarComponent,
         InputProcessingSettingsComponent,
         ColorSchemeSettingsForModeComponent,
+        AssistPanelComponent,
+        SnippetsModalComponent,
     ],
     exports: [
         ColorPickerComponent,
@@ -87,6 +91,7 @@ import { DefaultColorSchemes } from './colorSchemes'
         LoginScriptsSettingsComponent,
         TerminalToolbarComponent,
         InputProcessingSettingsComponent,
+        AssistPanelComponent,
     ],
 })
 export default class TerminalModule { } // eslint-disable-line @typescript-eslint/no-extraneous-class

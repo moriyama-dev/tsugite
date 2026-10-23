@@ -67,3 +67,8 @@ tsugite:
   showOffline: false
   machines:
     __nonStructural: true
+  assist:
+    sendOnEnter: true
+    notify: true
+    # null until edited: the built-in snippets are shown in the interface language
+    snippets: null

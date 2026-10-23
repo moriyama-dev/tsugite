@@ -20,6 +20,9 @@ export interface Profile {
     weight: number
     isBuiltin: boolean
     isTemplate: boolean
+
+    /** Set on tabs that run Claude Code: the machine name the work panel reports under */
+    tsugiteAssist?: string | null
 }
 
 export interface ConnectableProfile extends Profile {

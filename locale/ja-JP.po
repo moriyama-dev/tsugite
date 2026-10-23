@@ -2687,3 +2687,195 @@ msgstr "実行"
 #: Tsugite
 msgid "Edit profile"
 msgstr "プロファイルを編集"
+
+#: Tsugite
+msgid "Add a snippet"
+msgstr "定型文を追加"
+
+#: Tsugite
+msgid "Change the model"
+msgstr "モデルを変更する"
+
+#: Tsugite
+msgid "Commands and settings"
+msgstr "コマンドと設定"
+
+#: Tsugite
+msgid "Commit"
+msgstr "コミット"
+
+#: Tsugite
+msgid "Continue"
+msgstr "続けて"
+
+#: Tsugite
+msgid "Do not change any code yet. First show a plan of what you will change and how."
+msgstr "まだコードは変えずに、何をどう変えるかの計画を先に示してください。"
+
+#: Tsugite
+msgid "Edit snippets"
+msgstr "定型文を編集"
+
+#: Tsugite
+msgid "Ended"
+msgstr "終了"
+
+#: Tsugite
+msgid "Enter"
+msgstr "Enter"
+
+#: Tsugite
+msgid "Enter to send, Shift+Enter for a new line"
+msgstr "Enter で送信、Shift+Enter で改行"
+
+#: Tsugite
+msgid "Finished"
+msgstr "完了しました"
+
+#: Tsugite
+msgid "History"
+msgstr "履歴"
+
+#: Tsugite
+msgid "No history yet"
+msgstr "履歴はまだありません"
+
+#: Tsugite
+msgid "Nothing sent yet"
+msgstr "まだ何も送っていません"
+
+#: Tsugite
+msgid "Notify when finished or waiting"
+msgstr "完了や確認待ちを通知する"
+
+#: Tsugite
+msgid "Open a past conversation"
+msgstr "過去の会話を開く"
+
+#: Tsugite
+msgid "Plan first"
+msgstr "計画を先に"
+
+#: Tsugite
+msgid "Please continue."
+msgstr "続けてください。"
+
+#: Tsugite
+msgid "Prompts sent from this tab"
+msgstr "このタブから送った指示"
+
+#: Tsugite
+msgid "Put back in the input to edit and send again"
+msgstr "入力欄に戻して、直してから送り直す"
+
+#: Tsugite
+msgid "Ready"
+msgstr "待機中"
+
+#: Tsugite
+msgid "Review the changes and commit them with a suitable message."
+msgstr "変更内容を確認して、適切なメッセージでコミットしてください。"
+
+#: Tsugite
+msgid "Run the tests"
+msgstr "テストを実行"
+
+#: Tsugite
+msgid "Run the tests and report the cause and a fix for any failure."
+msgstr "テストを実行して、失敗があれば原因と直し方を報告してください。"
+
+#: Tsugite
+msgid "Send"
+msgstr "送信"
+
+#: Tsugite
+msgid "Send now"
+msgstr "今すぐ送る"
+
+#: Tsugite
+msgid "Send with Enter"
+msgstr "Enter で送信する"
+
+#: Tsugite
+msgid "Send {command}?"
+msgstr "{command} を送りますか？"
+
+#: Tsugite
+msgid "Send {key}"
+msgstr "{key} を送る"
+
+#: Tsugite
+msgid "Sends the Esc key"
+msgstr "Esc キーを送ります"
+
+#: Tsugite
+msgid "Show help"
+msgstr "ヘルプを表示する"
+
+#: Tsugite
+msgid "Snippets"
+msgstr "定型文"
+
+#: Tsugite
+msgid "Snippets appear under the input. Clicking one inserts its text where the cursor is; nothing is sent until you press Send."
+msgstr "定型文は入力欄の下に並びます。クリックするとカーソルの位置に文が入ります。送信ボタンを押すまでは送られません。"
+
+#: Tsugite
+msgid "Start over with an empty conversation"
+msgstr "会話を空にしてやり直す"
+
+#: Tsugite
+msgid "Starting…"
+msgstr "起動中…"
+
+#: Tsugite
+msgid "Stop"
+msgstr "中断"
+
+#: Tsugite
+msgid "Summarize changes"
+msgstr "変更を要約"
+
+#: Tsugite
+msgid "Summarize the changes so far, briefly, file by file."
+msgstr "ここまでの変更点を、ファイルごとに短く要約してください。"
+
+#: Tsugite
+msgid "Summarize the conversation to free up context"
+msgstr "会話を要約して、文脈の空きを増やす"
+
+#: Tsugite
+msgid "Take back into the input"
+msgstr "入力欄に戻す"
+
+#: Tsugite
+msgid "Text"
+msgstr "本文"
+
+#: Tsugite
+msgid "This session"
+msgstr "このタブの記録"
+
+#: Tsugite
+msgid "Waiting for your answer"
+msgstr "確認待ち"
+
+#: Tsugite
+msgid "Working"
+msgstr "処理中"
+
+#: Tsugite
+msgid "Write instructions… ({hint})"
+msgstr "指示を入力…（{hint}）"
+
+#: Tsugite
+msgid "{mod}+Enter to send"
+msgstr "{mod}+Enter で送信"
+
+#: Tsugite
+msgid "Show the input"
+msgstr "入力欄を表示"
+
+#: Tsugite
+msgid "Hide the input"
+msgstr "入力欄を隠す"

@@ -92,6 +92,9 @@ export abstract class Frontend {
     abstract restoreState (state: string): void
 
     abstract supportsBracketedPaste (): boolean
+
+    /** Text of the rows on the live screen (ignoring scrollback), one string per row */
+    abstract getVisibleLines (): string[]
     abstract isAlternateScreenActive (): boolean
 
     /**

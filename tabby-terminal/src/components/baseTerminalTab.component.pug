@@ -1,5 +1,6 @@
 .terminal-toolbar-spacer
 .content(#content, [style.opacity]='frontendIsReady ? 1 : 0')
+assist-panel(*ngIf='profile?.tsugiteAssist', [tab]='this')
 search-panel(
     *ngIf='showSearchPanel && frontend',
     [class.d-none]='!hasFocus',

@@ -42,6 +42,16 @@ input {
         }
     }
 
+    .assist-badge {
+        font-size: .7rem;
+        color: #e2c79c;
+        flex: none;
+
+        &.waiting {
+            color: #c98a2e;
+        }
+    }
+
     .status-dot {
         font-size: .45rem;
         color: var(--theme-fg-more-2);

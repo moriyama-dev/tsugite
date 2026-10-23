@@ -12,6 +12,7 @@ import { ProfileProvider } from '../api/index'
 import { PartialProfileGroup, ProfileGroup, PartialProfile, Profile } from '../index'
 import { TailscaleService, TailscaleMachine, TailscaleState } from '../services/tailscale.service'
 import { ClaudeLauncherService } from '../services/claudeLauncher.service'
+import { AssistActivityService, AssistState } from '../services/assistActivity.service'
 import { BaseComponent } from './base.component'
 import { TailscaleMachineModalComponent } from './tailscaleMachineModal.component'
 import { PromptModalComponent } from './promptModal.component'
@@ -34,6 +35,8 @@ export class ProfileTreeComponent extends BaseComponent {
     filteredProfiles: PartialProfile<Profile>[] = []
     @Input() filter = ''
 
+    /** What the assistant is doing in tabs opened on each machine or connection, by name */
+    assistStates = new Map<string, AssistState | null>()
     machines: TailscaleMachine[] = []
     visibleMachines: TailscaleMachine[] = []
     hiddenOfflineCount = 0
@@ -57,6 +60,7 @@ export class ProfileTreeComponent extends BaseComponent {
         private ngbModal: NgbModal,
         private tailscale: TailscaleService,
         private claude: ClaudeLauncherService,
+        private assistActivity: AssistActivityService,
     ) {
         super()
     }
@@ -77,6 +81,10 @@ export class ProfileTreeComponent extends BaseComponent {
         })
         this.subscribeUntilDestroyed(this.tailscale.state$, state => this.tailscaleState = state)
         this.tailscale.start()
+        this.subscribeUntilDestroyed(this.assistActivity.changed$, () => this.assistStates = new Map(
+            [...this.machines.map(m => m.name), ...this.profileGroups.flatMap(g => g.profiles ?? []).map(p => p.name)]
+                .map(name => [name, this.assistActivity.get(name)]),
+        ))
 
         await this.loadTreeItems()
         this.subscribeUntilDestroyed(this.config.changed$, () => {

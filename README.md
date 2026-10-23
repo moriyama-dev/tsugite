@@ -13,6 +13,10 @@ start [Claude Code](https://claude.com/claude-code) there in the folder you choo
 - **Start Claude Code** on any machine: Tsugite logs in, changes into the working folder,
   and runs `claude` inside `tmux`, so a dropped connection picks up where it left off.
   If Claude Code is missing it offers to install it.
+- **Work panel** under that terminal: an input box that is easy to use with Japanese and
+  other input methods, the current state (working, waiting for your answer, ready) with a
+  timer, a send queue, desktop notifications, prompt history and snippets. Claude Code
+  itself is shown exactly as it is; the panel only types into it.
 - Tabs, split panes, a vault for passwords and keys, themes and color schemes.
 - No file browser, no telemetry, no self-updater (updates come through apt and Homebrew).
 
@@ -96,6 +100,25 @@ On a macOS remote machine:
 - Claude Code keeps its login in the keychain, which is locked in SSH sessions. If it
   asks you to sign in every time, run `security unlock-keychain` first.
 
+### Work panel
+
+Tabs started with the wand button get a panel under the terminal.
+
+- **Input**: Enter sends, Shift+Enter adds a line (or switch to Ctrl/⌘+Enter in the **⋯**
+  menu). Enter never sends while an input method is converting. ↑ at the start of the box
+  recalls earlier prompts; drafts are kept per machine. The prompt is pasted into the
+  terminal and submitted, so line breaks survive.
+- **State**: read from the title Claude Code gives the terminal, and from the question on
+  screen when it waits for an answer. The side panel shows the same next to the machine.
+- **While it works**: what you send is queued and sent when Claude Code is ready again.
+  **Stop** sends Esc. When it waits for an answer, the panel offers **1 2 3 ↑ ↓ Enter**
+  as keys; nothing is ever answered for you.
+- **Notifications** when a run finishes or needs an answer and you are looking elsewhere.
+- **Snippets** under the input insert ready-made instructions; edit them with the pencil.
+  The clock button lists what you sent from the tab and how long each run took; pick one
+  to edit and send it again. The **⋯** menu sends `/resume`, `/compact`, `/model`,
+  `/clear` and `/help`.
+
 ## Building from source
 
 Node.js 22+, Yarn 1 and, on Linux, `libfontconfig-dev libsecret-1-dev`:
@@ -112,6 +135,11 @@ node scripts/build-linux.mjs           # or build-macos.mjs; output in dist/
 
 MIT. Copyright (c) 2017 Tabby Developers, (c) 2026 Yoshiro Moriyama. See [LICENSE](LICENSE).
 
+Claude and Claude Code are trademarks of Anthropic, PBC; Tailscale is a trademark of
+Tailscale Inc. Tsugite is an independent project, not affiliated with or endorsed by
+either. It does not include Claude Code: it starts the copy installed on your machine,
+signed in with your own account and subject to Anthropic's terms.
+
 ---
 
 ## 日本語
@@ -123,6 +151,7 @@ Tailscale につながっているマシンを一覧表示し、クリックひ�
 - サイドバーの **Tailscale** セクション：Tailnet 上のマシンを、オンラインのものから順に表示します（30秒ごとに更新）。オフラインのマシンもワンクリックで表示できます
 - **SSH 接続** セクション：Tailscale に入っていないサーバー用です。ホスト、ポート、鍵、踏み台、プロキシ、ポート転送、ログインスクリプトを設定できます。`~/.ssh/config` のホストも表示されます
 - **Claude Code を起動**：ログインして作業フォルダに移動し、`tmux` の中で `claude` を実行します。回線が切れても続きから再開できます。Claude Code が入っていなければ、導入するか確認します
+- そのターミナルの下の **作業パネル**：日本語入力しやすい入力欄、今の状態（処理中・確認待ち・待機中）と経過時間、送信キュー、デスクトップ通知、指示の履歴と定型文。Claude Code の画面はそのまま表示し、パネルはそこへ入力するだけです
 - タブ、画面分割、パスワードと鍵を守る Vault、テーマと配色
 - ファイルブラウザー、利用状況の送信、自動アップデート機能はありません（更新は apt と Homebrew で行います）
 
@@ -178,3 +207,15 @@ sudo apt install tsugite
 - **システム設定 → 一般 → 共有 → リモートログイン** をオンにしてください
 - App Store 版や公式サイト版の Tailscale アプリは、Tailscale SSH のサーバーになれません。Mac には **SSH 鍵** を使ってください
 - Claude Code はログイン情報をキーチェーンに保存しますが、SSH 経由ではキーチェーンがロックされています。毎回ログインを求められる場合は、先に `security unlock-keychain` を実行してください
+
+**作業パネル**：杖のボタンで開いたタブには、ターミナルの下にパネルが付きます。
+
+- **入力欄**：Enter で送信、Shift+Enter で改行です（**⋯** メニューで Ctrl/⌘+Enter 送信に切り替えられます）。日本語の変換中の Enter では送信しません。入力欄の先頭で ↑ を押すと、前の指示を呼び出せます。下書きはマシンごとに残ります。指示はターミナルに貼り付けてから送るので、改行もそのまま届きます
+- **状態**：Claude Code がターミナルに付けるタイトルと、確認待ちのときに画面に出る質問から判断します。サイドバーのマシン名の横にも同じ印が出ます
+- **処理中**：送った指示はキューに入り、Claude Code が待機中に戻ったら送られます。**中断** は Esc キーを送ります。確認待ちのときは **1 2 3 ↑ ↓ Enter** のキーを押せます。勝手に答えることはありません
+- **通知**：ほかの画面を見ているあいだに処理が終わったり、確認待ちになったりすると知らせます
+- **定型文**：入力欄の下に並び、クリックで文が入ります。鉛筆のボタンで編集できます。時計のボタンでは、このタブから送った指示と所要時間の一覧を見られ、選ぶと入力欄に戻して直してから送り直せます。**⋯** メニューから `/resume`、`/compact`、`/model`、`/clear`、`/help` を送れます
+
+### 商標について
+
+Claude と Claude Code は Anthropic, PBC の商標、Tailscale は Tailscale Inc. の商標です。Tsugite は独立したプロジェクトで、両社とは提携しておらず、承認も受けていません。Tsugite には Claude Code は含まれていません。手元に入っている Claude Code を、利用者自身のアカウントで起動するだけで、利用には Anthropic の規約が適用されます。

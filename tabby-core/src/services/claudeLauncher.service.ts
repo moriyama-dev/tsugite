@@ -16,7 +16,10 @@ const REMOTE_SCRIPT = [
     'case "$d" in "~") d="$HOME";; "~/"*) d="$HOME/${d#??}";; esac',
     'if [ -n "$d" ]; then cd "$d" || exit 1; fi',
     'if ! command -v claude >/dev/null 2>&1; then printf "%s [y/N] " "$2"; read a; case "$a" in y|Y|yes) if command -v curl >/dev/null 2>&1; then curl -fsSL https://claude.ai/install.sh | bash; else wget -qO- https://claude.ai/install.sh | bash; fi || exit 1;; *) exit 0;; esac; fi',
-    'if command -v tmux >/dev/null 2>&1; then exec tmux new -A -s "$3" claude; fi',
+    // tmux keeps Claude running when the tab closes; an already running tmux server does not see
+    // the PATH set above, so claude is started by its full path. Its titles are passed through so Tsugite can
+    // follow the work, and its status bar is hidden because Tsugite shows the state itself
+    'if command -v tmux >/dev/null 2>&1; then tmux has-session -t "$3" 2>/dev/null || tmux -u new-session -d -s "$3" "$(command -v claude)"; tmux set-option -t "$3" set-titles on; tmux set-option -t "$3" set-titles-string "#T"; tmux set-option -t "$3" status off; exec tmux -u attach-session -t "$3"; fi',
     'exec claude',
 ].join('; ')
 
@@ -40,6 +43,10 @@ export class ClaudeLauncherService {
         const clone = deepClone(profile)
         const workdir: string = clone.options?.claudeWorkdir ?? ''
         clone.name = `${profile.name} · Claude`
+        // The work panel and the side panel follow this tab under the machine's own name
+        clone.tsugiteAssist = profile.name
+        // The tab title then follows the task title Claude sets
+        clone.disableDynamicTitle = false
         clone.options ??= {}
         clone.options.scripts = [
             ...clone.options.scripts ?? [],

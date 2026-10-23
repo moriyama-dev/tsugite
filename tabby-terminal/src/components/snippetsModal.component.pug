@@ -1,0 +1,32 @@
+.modal-header
+    h3.m-0(translate) Snippets
+
+.modal-body
+    .text-muted.mb-3(translate) Snippets appear under the input. Clicking one inserts its text where the cursor is; nothing is sent until you press Send.
+
+    .snippet.mb-3(*ngFor='let snippet of snippets; let i = index')
+        .d-flex.mb-1
+            input.form-control.form-control-sm.me-2(
+                type='text',
+                [(ngModel)]='snippet.name',
+                [placeholder]='"Name"|translate'
+            )
+            button.btn.btn-sm.btn-link((click)='move(i, -1)', [disabled]='i === 0')
+                i.fas.fa-arrow-up
+            button.btn.btn-sm.btn-link((click)='move(i, 1)', [disabled]='i === snippets.length - 1')
+                i.fas.fa-arrow-down
+            button.btn.btn-sm.btn-link((click)='remove(i)')
+                i.fas.fa-trash
+        textarea.form-control.form-control-sm(
+            rows='2',
+            [(ngModel)]='snippet.text',
+            [placeholder]='"Text"|translate'
+        )
+
+    button.btn.btn-secondary((click)='add()')
+        i.fas.fa-plus
+        span.ms-1(translate) Add a snippet
+
+.modal-footer
+    button.btn.btn-secondary((click)='cancel()', translate) Cancel
+    button.btn.btn-primary((click)='save()', translate) Save

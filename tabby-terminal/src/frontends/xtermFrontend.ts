@@ -809,6 +809,16 @@ export class XTermFrontend extends Frontend {
         return this.xterm.modes.bracketedPasteMode
     }
 
+    getVisibleLines (): string[] {
+        const buffer = this.xterm.buffer.active
+        const lines: string[] = []
+        // The live screen, not the scrolled-back view the user may be reading
+        for (let y = buffer.baseY; y < buffer.baseY + this.xterm.rows; y++) {
+            lines.push(buffer.getLine(y)?.translateToString(true) ?? '')
+        }
+        return lines
+    }
+
     isAlternateScreenActive (): boolean {
         return this.xterm.buffer.active.type === 'alternate'
     }

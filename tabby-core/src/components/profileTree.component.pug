@@ -45,6 +45,7 @@
                     .fw-20
                         i.fa.fa-fw.fas.fa-circle.status-dot.ms-1([class.online]='machine.online')
                     span.ms-2.no-wrap {{ machine.name }}
+                    ng-container(*ngTemplateOutlet='assistBadge; context: {$implicit: assistStates.get(machine.name)}')
 
                     .actions
                         .action((click)='openMachineTerminal(machine)', [title]='"Open terminal"|translate')
@@ -100,6 +101,7 @@
                             .fw-20
                                 profile-icon.ms-1([icon]='profile.icon', [color]='profile.color')
                             span.ms-2.no-wrap {{ profile.name }}
+                            ng-container(*ngTemplateOutlet='assistBadge; context: {$implicit: assistStates.get(profile.name)}')
 
                             .actions
                                 .action((click)='launchProfile(profile)', [title]='"Open terminal"|translate')
@@ -112,3 +114,8 @@
 .grabber(
     (mousedown)="startResize($event)"
 )
+
+//- Shows when an assisted tab on the machine is working or waiting for an answer
+ng-template(#assistBadge let-state)
+    i.assist-badge.fas.fa-circle-notch.fa-spin.ms-2(*ngIf='state === "working"', [title]='"Working"|translate')
+    i.assist-badge.waiting.fas.fa-hand.ms-2(*ngIf='state === "waiting"', [title]='"Waiting for your answer"|translate')

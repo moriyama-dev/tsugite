@@ -1,0 +1,161 @@
+:host {
+    display: flex;
+    flex-direction: column;
+    flex: none;
+    border-top: 1px solid var(--theme-bg-more-2);
+    background: var(--theme-bg-more);
+    padding: 6px 10px 8px;
+    gap: 6px;
+}
+
+:host.collapsed {
+    padding-bottom: 6px;
+}
+
+.assist-state {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 8px;
+    min-height: 28px;
+    font-size: 0.85rem;
+
+    .assist-tools {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        margin-left: auto;
+    }
+
+    .btn-sm {
+        padding: 2px 8px;
+    }
+
+    .key {
+        min-width: 28px;
+    }
+}
+
+.state-badge {
+    display: flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+    background: var(--theme-bg-more-2);
+
+    &.state-working {
+        color: #e2c79c;
+    }
+
+    &.state-waiting {
+        background: #c98a2e;
+        color: #1b1b1b;
+    }
+
+    &.state-idle {
+        color: #7cc28a;
+    }
+
+    &.state-ended {
+        opacity: .6;
+    }
+
+    .elapsed {
+        font-variant-numeric: tabular-nums;
+        opacity: .8;
+    }
+}
+
+.task {
+    flex: 1 1 80px;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    opacity: .75;
+}
+
+.assist-queue {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: 0.85rem;
+
+    .queued {
+        display: flex;
+        align-items: center;
+        padding: 2px 8px;
+        border-left: 2px solid #e2c79c;
+        background: var(--theme-bg-more-2);
+
+        .queued-text {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .btn-sm {
+            padding: 0 6px;
+        }
+    }
+}
+
+.assist-composer {
+    display: flex;
+    gap: 8px;
+    align-items: flex-end;
+
+    .btn {
+        white-space: nowrap;
+    }
+
+    textarea {
+        flex: auto;
+        resize: vertical;
+        min-height: 2.5em;
+        max-height: 40vh;
+        font-size: 0.95rem;
+    }
+}
+
+.assist-chips {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px;
+    font-size: 0.8rem;
+
+    .chip {
+        border: 1px solid var(--theme-bg-more-2);
+        border-radius: 12px;
+        padding: 1px 10px;
+        color: inherit;
+
+        &:hover {
+            border-color: #e2c79c;
+        }
+    }
+}
+
+// Menus are rendered in the body (container='body'), so these rules are global
+::ng-deep .assist-menu {
+    max-width: 480px;
+    max-height: 60vh;
+    overflow-y: auto;
+
+    .run {
+        white-space: normal;
+    }
+
+    .run-prompt {
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+    }
+
+    .run-meta {
+        font-size: 0.8em;
+    }
+}
