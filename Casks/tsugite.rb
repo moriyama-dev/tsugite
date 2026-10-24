@@ -1,6 +1,6 @@
 # Homebrew cask for Tsugite. Updated by the Release workflow.
 #   brew tap moriyama-dev/tsugite https://github.com/moriyama-dev/tsugite
-#   brew install --cask tsugite
+#   brew install --cask moriyama-dev/tsugite/tsugite
 cask "tsugite" do
   arch arm: "arm64", intel: "x86_64"
 

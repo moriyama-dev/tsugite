@@ -32,7 +32,7 @@ macOS 12 or later, Apple Silicon and Intel. With [Homebrew](https://brew.sh):
 
 ```sh
 brew tap moriyama-dev/tsugite https://github.com/moriyama-dev/tsugite
-brew install --cask tsugite
+brew install --cask moriyama-dev/tsugite/tsugite
 ```
 
 Updates then come with `brew upgrade`. You can also use the `.dmg` from
@@ -175,7 +175,7 @@ Tsugite は [Tabby](https://github.com/Eugeny/tabby)（MIT ライセンス）の
 
 ```sh
 brew tap moriyama-dev/tsugite https://github.com/moriyama-dev/tsugite
-brew install --cask tsugite
+brew install --cask moriyama-dev/tsugite/tsugite
 ```
 
 以後は `brew upgrade` で更新されます。[Releases](https://github.com/moriyama-dev/tsugite/releases) の `.dmg` も使えますが、公証（notarize）していないので、初回は **システム設定 → プライバシーとセキュリティ** で **このまま開く** を選んでください。
