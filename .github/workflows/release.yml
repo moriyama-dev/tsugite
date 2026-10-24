@@ -76,6 +76,9 @@ jobs:
         env:
           USE_HARD_LINKS: false
 
+      - name: Launch the app
+        run: xvfb-run -a node scripts/launch-test.mjs dist/linux-unpacked/tsugite
+
       - name: Collect the packages
         env:
           RELEASE_VERSION: ${{ needs.version.outputs.version }}
@@ -135,6 +138,11 @@ jobs:
       # An invalid signature only shows up as a crash at launch, so check it here
       - name: Verify the signature
         run: codesign --verify --deep --strict --verbose=2 dist/mac*/Tsugite.app
+
+      # The x86_64 build cannot run on the Apple Silicon runner
+      - name: Launch the app
+        if: matrix.arch == 'arm64'
+        run: node scripts/launch-test.mjs dist/mac*/Tsugite.app/Contents/MacOS/Tsugite
 
       - name: Collect the packages
         env:
