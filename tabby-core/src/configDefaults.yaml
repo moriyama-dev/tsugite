@@ -70,5 +70,5 @@ tsugite:
   assist:
     sendOnEnter: true
     notify: true
-    # null until edited: the built-in snippets are shown in the interface language
-    snippets: null
+    # Covers the assistant's own input box in the terminal while the panel's input is in use
+    hideTerminalInput: true

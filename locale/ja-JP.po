@@ -2879,3 +2879,115 @@ msgstr "入力欄を表示"
 #: Tsugite
 msgid "Hide the input"
 msgstr "入力欄を隠す"
+
+#: Tsugite
+msgid "Show how much context is used"
+msgstr "文脈の使用量を表示する"
+
+#: Tsugite
+msgid "Change the effort level"
+msgstr "effort を変更する"
+
+#: Tsugite
+msgid "Show the session status"
+msgstr "セッションの状態を表示する"
+
+#: Tsugite
+msgid "Manage MCP servers"
+msgstr "MCP サーバーを管理する"
+
+#: Tsugite
+msgid "Open the settings"
+msgstr "設定を開く"
+
+#: Tsugite
+msgid "Model"
+msgstr "モデル"
+
+#: Tsugite
+msgid "Effort"
+msgstr "effort"
+
+#: Tsugite
+msgid "Default"
+msgstr "既定"
+
+#: Tsugite
+msgid "Ask first"
+msgstr "毎回確認"
+
+#: Tsugite
+msgid "Accept edits"
+msgstr "編集は自動承認"
+
+#: Tsugite
+msgid "Plan"
+msgstr "プラン"
+
+#: Tsugite
+msgid "Bypass"
+msgstr "確認なし"
+
+#: Tsugite
+msgid "Add files or images"
+msgstr "ファイルや画像を追加"
+
+#: Tsugite
+msgid "Image on the clipboard"
+msgstr "クリップボードの画像"
+
+#: Tsugite
+msgid "Files on this computer…"
+msgstr "このコンピューターのファイル…"
+
+#: Tsugite
+msgid "A file on the remote machine…"
+msgstr "接続先のファイル…"
+
+#: Tsugite
+msgid "You can also paste images into the input."
+msgstr "入力欄に画像を貼り付けることもできます。"
+
+#: Tsugite
+msgid "Conversations and history"
+msgstr "会話と履歴"
+
+#: Tsugite
+msgid "Model and effort"
+msgstr "モデルと effort"
+
+#: Tsugite
+msgid "Switch the permission mode (Shift+Tab)"
+msgstr "許可モードを切り替える（Shift+Tab）"
+
+#: Tsugite
+msgid "Stop (Esc)"
+msgstr "中断（Esc）"
+
+#: Tsugite
+msgid "Queue until it is ready"
+msgstr "待機中になったら送る"
+
+#: Tsugite
+msgid "Hide the input inside the terminal"
+msgstr "ターミナル側の入力欄を隠す"
+
+#: Tsugite
+msgid "There is no image on the clipboard"
+msgstr "クリップボードに画像がありません"
+
+#: Tsugite
+msgid "Could not send the file"
+msgstr "ファイルを送れませんでした"
+
+#: Tsugite
+msgid "Could not list the files"
+msgstr "ファイルの一覧を取得できませんでした"
+
+#: Tsugite
+msgid "Refer to a file"
+msgstr "参照するファイル"
+
+#: Tsugite
+msgid "The terminal's own input is hidden; click to type in the terminal"
+msgstr "ターミナル側の入力欄を隠しています。クリックするとターミナルに直接入力できます"

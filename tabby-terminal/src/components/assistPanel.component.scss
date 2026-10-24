@@ -12,6 +12,8 @@
     padding-bottom: 6px;
 }
 
+$wood: #e2c79c;
+
 .assist-state {
     display: flex;
     flex-wrap: wrap;
@@ -20,19 +22,19 @@
     min-height: 28px;
     font-size: 0.85rem;
 
-    .assist-tools {
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        margin-left: auto;
-    }
-
     .btn-sm {
         padding: 2px 8px;
     }
 
     .key {
         min-width: 28px;
+    }
+
+    .assist-tools {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        margin-left: auto;
     }
 }
 
@@ -45,7 +47,7 @@
     background: var(--theme-bg-more-2);
 
     &.state-working {
-        color: #e2c79c;
+        color: $wood;
     }
 
     &.state-waiting {
@@ -86,7 +88,7 @@
         display: flex;
         align-items: center;
         padding: 2px 8px;
-        border-left: 2px solid #e2c79c;
+        border-left: 2px solid $wood;
         background: var(--theme-bg-more-2);
 
         .queued-text {
@@ -101,39 +103,100 @@
     }
 }
 
-.assist-composer {
+// One framed box holding the text and the tools under it
+.assist-box {
     display: flex;
-    gap: 8px;
-    align-items: flex-end;
+    flex-direction: column;
+    border: 1px solid var(--theme-bg-more-2);
+    border-left: 3px solid $wood;
+    background: var(--theme-bg);
 
-    .btn {
-        white-space: nowrap;
+    &:focus-within {
+        border-color: rgba($wood, .6);
+        border-left-color: $wood;
     }
 
     textarea {
-        flex: auto;
+        border: none;
+        outline: none;
+        background: transparent;
+        color: inherit;
         resize: vertical;
         min-height: 2.5em;
         max-height: 40vh;
+        padding: 8px 10px 4px;
         font-size: 0.95rem;
     }
 }
 
-.assist-chips {
+.assist-toolbar {
     display: flex;
     align-items: center;
-    flex-wrap: wrap;
-    gap: 4px;
-    font-size: 0.8rem;
+    gap: 2px;
+    padding: 2px 4px 4px;
 
-    .chip {
-        border: 1px solid var(--theme-bg-more-2);
-        border-radius: 12px;
-        padding: 1px 10px;
+    > div {
+        display: flex;
+    }
+
+    .tool {
+        display: flex;
+        align-items: center;
+        height: 26px;
+        min-width: 30px;
+        justify-content: center;
+        padding: 0 8px;
+        border: none;
+        background: transparent;
         color: inherit;
+        opacity: .7;
+        font-size: 0.8rem;
 
-        &:hover {
-            border-color: #e2c79c;
+        &:hover:not([disabled]) {
+            opacity: 1;
+            background: var(--theme-bg-more-2);
+        }
+
+        &[disabled] {
+            opacity: .3;
+        }
+
+        &.dropdown-toggle::after {
+            display: none;
+        }
+
+        .tool-text {
+            white-space: nowrap;
+            font-weight: 600;
+        }
+    }
+
+    .tool-wide {
+        max-width: 220px;
+
+        .tool-text {
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+    }
+
+    .send {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 26px;
+        width: 40px;
+        margin-left: 4px;
+        border: none;
+        background: $wood;
+        color: #1b1b1b;
+
+        &.stop {
+            background: #c98a2e;
+        }
+
+        &[disabled] {
+            opacity: .35;
         }
     }
 }

@@ -21,7 +21,6 @@ import { ColorSchemeSelectorComponent } from './components/colorSchemeSelector.c
 import { InputProcessingSettingsComponent } from './components/inputProcessingSettings.component'
 import { ColorSchemeSettingsForModeComponent } from './components/colorSchemeSettingsForMode.component'
 import { AssistPanelComponent } from './components/assistPanel.component'
-import { SnippetsModalComponent } from './components/snippetsModal.component'
 
 import { TerminalDecorator } from './api/decorator'
 import { TerminalContextMenuItemProvider } from './api/contextMenuProvider'
@@ -81,7 +80,6 @@ import { DefaultColorSchemes } from './colorSchemes'
         InputProcessingSettingsComponent,
         ColorSchemeSettingsForModeComponent,
         AssistPanelComponent,
-        SnippetsModalComponent,
     ],
     exports: [
         ColorPickerComponent,

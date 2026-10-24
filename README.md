@@ -14,9 +14,10 @@ start [Claude Code](https://claude.com/claude-code) there in the folder you choo
   and runs `claude` inside `tmux`, so a dropped connection picks up where it left off.
   If Claude Code is missing it offers to install it.
 - **Work panel** under that terminal: an input box that is easy to use with Japanese and
-  other input methods, the current state (working, waiting for your answer, ready) with a
-  timer, a send queue, desktop notifications, prompt history and snippets. Claude Code
-  itself is shown exactly as it is; the panel only types into it.
+  other input methods, with a row of tools under it (attach, commands, history, model,
+  permission mode, send), the current state with a timer, a send queue and desktop
+  notifications. Claude Code's output is shown exactly as it is; the panel types into it and
+  covers its now redundant input box.
 - Tabs, split panes, a vault for passwords and keys, themes and color schemes.
 - No file browser, no telemetry, no self-updater (updates come through apt and Homebrew).
 
@@ -104,20 +105,30 @@ On a macOS remote machine:
 
 Tabs started with the wand button get a panel under the terminal.
 
-- **Input**: Enter sends, Shift+Enter adds a line (or switch to Ctrl/⌘+Enter in the **⋯**
-  menu). Enter never sends while an input method is converting. ↑ at the start of the box
+- **Input**: Enter sends, Shift+Enter adds a line (or switch to Ctrl/⌘+Enter in the panel
+  settings). Enter never sends while an input method is converting. ↑ at the start of the box
   recalls earlier prompts; drafts are kept per machine. The prompt is pasted into the
   terminal and submitted, so line breaks survive.
-- **State**: read from the title Claude Code gives the terminal, and from the question on
-  screen when it waits for an answer. The side panel shows the same next to the machine.
-- **While it works**: what you send is queued and sent when Claude Code is ready again.
-  **Stop** sends Esc. When it waits for an answer, the panel offers **1 2 3 ↑ ↓ Enter**
-  as keys; nothing is ever answered for you.
+- **Tools under the input**, left to right:
+  - **Paper clip**: send an image from the clipboard or files from this computer to the
+    remote machine (`~/.cache/tsugite/attachments`), or pick a file that is already there;
+    either way `@path` goes into the input. Images pasted into the input are sent the same way.
+  - **/**: Claude Code's commands (`/resume`, `/compact`, `/context`, `/model`, `/effort`,
+    `/status`, `/mcp`, `/config`, `/clear`, `/help`).
+  - **Clock**: open a past conversation, the prompts sent from this tab with how long each
+    run took, and your prompt history.
+  - **Model**: the model and effort, switched with `/model` and `/effort`.
+  - **Shield** (right): the permission mode; clicking switches it like Shift+Tab does.
+  - **Send**: while Claude Code works, what you send is queued until it is ready again; with
+    an empty input the button stops the run (Esc).
+- **State** above the input: working, waiting for your answer or ready, with a timer, read
+  from the title Claude Code gives the terminal and from the question on screen. The side
+  panel shows the same next to the machine. When Claude Code asks something, the panel offers
+  **1 2 3 ↑ ↓ Enter** as keys; nothing is ever answered for you.
+- **The input inside the terminal is hidden** while the panel's input is in use. It shows
+  again whenever Claude Code asks a question, and clicking where it was lets you type in the
+  terminal directly. Turn this off in the panel settings (sliders button).
 - **Notifications** when a run finishes or needs an answer and you are looking elsewhere.
-- **Snippets** under the input insert ready-made instructions; edit them with the pencil.
-  The clock button lists what you sent from the tab and how long each run took; pick one
-  to edit and send it again. The **⋯** menu sends `/resume`, `/compact`, `/model`,
-  `/clear` and `/help`.
 
 ## Building from source
 
@@ -151,7 +162,7 @@ Tailscale につながっているマシンを一覧表示し、クリックひ�
 - サイドバーの **Tailscale** セクション：Tailnet 上のマシンを、オンラインのものから順に表示します（30秒ごとに更新）。オフラインのマシンもワンクリックで表示できます
 - **SSH 接続** セクション：Tailscale に入っていないサーバー用です。ホスト、ポート、鍵、踏み台、プロキシ、ポート転送、ログインスクリプトを設定できます。`~/.ssh/config` のホストも表示されます
 - **Claude Code を起動**：ログインして作業フォルダに移動し、`tmux` の中で `claude` を実行します。回線が切れても続きから再開できます。Claude Code が入っていなければ、導入するか確認します
-- そのターミナルの下の **作業パネル**：日本語入力しやすい入力欄、今の状態（処理中・確認待ち・待機中）と経過時間、送信キュー、デスクトップ通知、指示の履歴と定型文。Claude Code の画面はそのまま表示し、パネルはそこへ入力するだけです
+- そのターミナルの下の **作業パネル**：日本語入力しやすい入力欄と、その下のボタンの列（添付、コマンド、履歴、モデル、許可モード、送信）、今の状態と経過時間、送信キュー、デスクトップ通知。Claude Code の出力はそのまま表示し、パネルはそこへ入力するだけです。不要になったターミナル側の入力欄は隠します
 - タブ、画面分割、パスワードと鍵を守る Vault、テーマと配色
 - ファイルブラウザー、利用状況の送信、自動アップデート機能はありません（更新は apt と Homebrew で行います）
 
@@ -210,11 +221,17 @@ sudo apt install tsugite
 
 **作業パネル**：杖のボタンで開いたタブには、ターミナルの下にパネルが付きます。
 
-- **入力欄**：Enter で送信、Shift+Enter で改行です（**⋯** メニューで Ctrl/⌘+Enter 送信に切り替えられます）。日本語の変換中の Enter では送信しません。入力欄の先頭で ↑ を押すと、前の指示を呼び出せます。下書きはマシンごとに残ります。指示はターミナルに貼り付けてから送るので、改行もそのまま届きます
-- **状態**：Claude Code がターミナルに付けるタイトルと、確認待ちのときに画面に出る質問から判断します。サイドバーのマシン名の横にも同じ印が出ます
-- **処理中**：送った指示はキューに入り、Claude Code が待機中に戻ったら送られます。**中断** は Esc キーを送ります。確認待ちのときは **1 2 3 ↑ ↓ Enter** のキーを押せます。勝手に答えることはありません
+- **入力欄**：Enter で送信、Shift+Enter で改行です（パネルの設定で Ctrl/⌘+Enter 送信に切り替えられます）。日本語の変換中の Enter では送信しません。入力欄の先頭で ↑ を押すと、前の指示を呼び出せます。下書きはマシンごとに残ります
+- **入力欄の下のボタン**（左から）
+  - **クリップ**：クリップボードの画像や、このコンピューターのファイルを接続先（`~/.cache/tsugite/attachments`）に送るか、接続先にあるファイルを選びます。どちらも入力欄に `@パス` が入ります。入力欄に画像を貼り付けても同じように送ります
+  - **/**：Claude Code のコマンド（`/resume`、`/compact`、`/context`、`/model`、`/effort`、`/status`、`/mcp`、`/config`、`/clear`、`/help`）
+  - **時計**：過去の会話を開く、このタブから送った指示と所要時間、入力の履歴
+  - **モデル**：モデルと effort を `/model` と `/effort` で切り替えます
+  - **盾**（右）：許可モード。押すと Shift+Tab と同じように切り替わります
+  - **送信**：処理中に送った指示は、待機中に戻るまでキューで待ちます。入力欄が空のときは中断（Esc）になります
+- **状態**（入力欄の上）：処理中・確認待ち・待機中と経過時間。サイドバーのマシン名の横にも出ます。確認待ちのときは **1 2 3 ↑ ↓ Enter** のキーを押せます。勝手に答えることはありません
+- **ターミナル側の入力欄は隠します**。Claude Code が質問しているときはまた表示し、隠していた場所をクリックするとターミナルに直接入力できます。パネルの設定（スライダーのボタン）でオフにできます
 - **通知**：ほかの画面を見ているあいだに処理が終わったり、確認待ちになったりすると知らせます
-- **定型文**：入力欄の下に並び、クリックで文が入ります。鉛筆のボタンで編集できます。時計のボタンでは、このタブから送った指示と所要時間の一覧を見られ、選ぶと入力欄に戻して直してから送り直せます。**⋯** メニューから `/resume`、`/compact`、`/model`、`/clear`、`/help` を送れます
 
 ### 商標について
 

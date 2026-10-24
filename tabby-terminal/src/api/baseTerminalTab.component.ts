@@ -501,6 +501,14 @@ export class BaseTerminalTabComponent<P extends BaseTerminalProfile> extends Bas
     }
 
     /**
+     * Runs a command on the machine this terminal is connected to, without using the terminal.
+     * Null where the tab has no such connection (local shells).
+     */
+    getRemoteExec (): ((command: string, input?: Buffer) => Promise<string>) | null {
+        return null
+    }
+
+    /**
      * Feeds input into the active session
      */
     sendInput (data: string|Buffer): void {

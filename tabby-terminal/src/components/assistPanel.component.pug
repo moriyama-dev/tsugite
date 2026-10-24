@@ -6,7 +6,7 @@
         i.fas.fa-fw.fa-check(*ngIf='state === "idle"')
         i.fas.fa-fw.fa-plug-circle-xmark(*ngIf='state === "ended"')
         span.ms-1 {{stateLabel}}
-        span.ms-1.elapsed(*ngIf='state === "working" || state === "waiting"') {{elapsed}}
+        span.ms-1.elapsed(*ngIf='busy') {{elapsed}}
     .task([title]='task') {{task}}
 
     .assist-tools
@@ -17,43 +17,20 @@
                 (click)='sendKey(k.key)',
                 [title]='"Send {key}"|translate:{key: k.label}'
             ) {{k.label}}
-        button.btn.btn-sm.btn-secondary(
-            *ngIf='state === "working" || state === "waiting"',
-            (click)='interrupt()',
-            [title]='"Sends the Esc key"|translate'
-        )
-            i.fas.fa-stop
-            span.ms-1(translate) Stop
 
         div(ngbDropdown, placement='top-end', container='body')
-            button.btn.btn-sm.btn-link(ngbDropdownToggle, [title]='"This session"|translate')
-                i.fas.fa-clock-rotate-left
-                span.ms-1(*ngIf='runs.length') {{runs.length}}
+            button.btn.btn-sm.btn-link(ngbDropdownToggle, [title]='"Settings"|translate')
+                i.fas.fa-sliders
             .dropdown-menu.assist-menu(ngbDropdownMenu)
-                .dropdown-header(translate) Prompts sent from this tab
-                .dropdown-item-text.text-muted(*ngIf='!runs.length', translate) Nothing sent yet
-                button.dropdown-item.run(*ngFor='let run of runs', (click)='reuse(run)', [title]='"Put back in the input to edit and send again"|translate')
-                    .run-prompt {{run.prompt}}
-                    .run-meta.text-muted
-                        span {{run.sentAt | date:'shortTime'}}
-                        span(*ngIf='runDuration(run)') · {{runDuration(run)}}
-                        span(*ngIf='run.task') · {{run.task}}
-
-        div(ngbDropdown, placement='top-end', container='body')
-            button.btn.btn-sm.btn-link(ngbDropdownToggle, [title]='"Commands and settings"|translate')
-                i.fas.fa-ellipsis
-            .dropdown-menu.assist-menu(ngbDropdownMenu)
-                .dropdown-header(translate) Commands
-                button.dropdown-item(*ngFor='let item of commands', (click)='runCommand(item)')
-                    code.me-2 {{item.command}}
-                    span.text-muted {{item.label|translate}}
-                .dropdown-divider
                 button.dropdown-item((click)='toggleSendOnEnter()')
                     i.fas.fa-fw.me-2([class.fa-check]='sendOnEnter')
                     span(translate) Send with Enter
                 button.dropdown-item((click)='toggleNotifications()')
                     i.fas.fa-fw.me-2([class.fa-check]='config.store.tsugite.assist.notify')
                     span(translate) Notify when finished or waiting
+                button.dropdown-item((click)='toggleHideTerminalInput()')
+                    i.fas.fa-fw.me-2([class.fa-check]='hideTerminalInput')
+                    span(translate) Hide the input inside the terminal
 
         button.btn.btn-sm.btn-link((click)='toggleCollapsed()', [title]='(collapsed ? "Show the input" : "Hide the input")|translate')
             i.fas([class.fa-chevron-up]='collapsed', [class.fa-chevron-down]='!collapsed')
@@ -68,31 +45,95 @@
         button.btn.btn-sm.btn-link((click)='unqueue(i)', [title]='"Take back into the input"|translate')
             i.fas.fa-xmark
 
-//- Composer
-.assist-composer(*ngIf='!collapsed')
-    textarea.form-control(
+//- Input with its row of tools underneath
+.assist-box(*ngIf='!collapsed')
+    textarea(
         #input,
         rows='3',
         [(ngModel)]='text',
         (ngModelChange)='onInput()',
         (keydown)='onKeyDown($event)',
+        (paste)='onPaste($event)',
+        (focus)='onInputFocus()',
         [placeholder]='"Write instructions… ({hint})"|translate:{hint: sendHint}'
     )
-    .assist-actions
-        button.btn.btn-primary.btn-sm((click)='send()', [disabled]='!text.trim()')
-            i.fas.fa-paper-plane
-            span.ms-1(translate) Send
 
-.assist-chips(*ngIf='!collapsed')
-    button.btn.btn-sm.chip(*ngFor='let snippet of snippets', (click)='insertSnippet(snippet)', [title]='snippet.text') {{snippet.name}}
-    button.btn.btn-sm.btn-link((click)='editSnippets()', [title]='"Edit snippets"|translate')
-        i.fas.fa-pen
+    .assist-toolbar
+        //- Add: files and images sent to the remote machine, or a file already there
+        div(ngbDropdown, placement='top-start', container='body')
+            button.tool(ngbDropdownToggle, [title]='"Add files or images"|translate', [disabled]='!canReachRemote')
+                i.fas.fa-paperclip(*ngIf='!uploading')
+                i.fas.fa-circle-notch.fa-spin(*ngIf='uploading')
+            .dropdown-menu.assist-menu(ngbDropdownMenu)
+                button.dropdown-item((click)='attachClipboardImage()')
+                    i.fas.fa-fw.fa-image.me-2
+                    span(translate) Image on the clipboard
+                button.dropdown-item((click)='attachFiles()')
+                    i.fas.fa-fw.fa-upload.me-2
+                    span(translate) Files on this computer…
+                button.dropdown-item((click)='pickRemoteFile()')
+                    i.fas.fa-fw.fa-at.me-2
+                    span(translate) A file on the remote machine…
+                .dropdown-item-text.text-muted.small(translate) You can also paste images into the input.
 
-    .ms-auto(ngbDropdown, placement='top-end', container='body')
-        button.btn.btn-sm.btn-link(ngbDropdownToggle)
-            i.fas.fa-list
-            span.ms-1(translate) History
-        .dropdown-menu.assist-menu(ngbDropdownMenu)
-            .dropdown-item-text.text-muted(*ngIf='!history.length', translate) No history yet
-            button.dropdown-item.run(*ngFor='let prompt of history.slice(0, 30)', (click)='pickHistory(prompt)')
-                .run-prompt {{prompt}}
+        //- Commands
+        div(ngbDropdown, placement='top-start', container='body')
+            button.tool(ngbDropdownToggle, [title]='"Commands"|translate')
+                span.tool-text /
+            .dropdown-menu.assist-menu(ngbDropdownMenu)
+                button.dropdown-item(*ngFor='let item of commands', (click)='runCommand(item)')
+                    code.me-2 {{item.command}}
+                    span.text-muted {{item.label|translate}}
+
+        //- Past conversations and prompts
+        div(ngbDropdown, placement='top-start', container='body')
+            button.tool(ngbDropdownToggle, [title]='"Conversations and history"|translate')
+                i.fas.fa-clock-rotate-left
+            .dropdown-menu.assist-menu(ngbDropdownMenu)
+                button.dropdown-item((click)='runCommand(commands[0])')
+                    i.fas.fa-fw.fa-folder-open.me-2
+                    span(translate) Open a past conversation
+                .dropdown-divider
+                .dropdown-header(translate) Prompts sent from this tab
+                .dropdown-item-text.text-muted(*ngIf='!runs.length', translate) Nothing sent yet
+                button.dropdown-item.run(*ngFor='let run of runs', (click)='reuse(run.prompt)', [title]='"Put back in the input to edit and send again"|translate')
+                    .run-prompt {{run.prompt}}
+                    .run-meta.text-muted
+                        span {{run.sentAt | date:'shortTime'}} · {{runDuration(run)}}
+                        span(*ngIf='run.task') · {{run.task}}
+                .dropdown-divider
+                .dropdown-header(translate) History
+                .dropdown-item-text.text-muted(*ngIf='!history.length', translate) No history yet
+                button.dropdown-item.run(*ngFor='let prompt of history.slice(0, 20)', (click)='reuse(prompt)')
+                    .run-prompt {{prompt}}
+
+        //- Model and effort
+        div(ngbDropdown, placement='top-start', container='body')
+            button.tool.tool-wide(ngbDropdownToggle, [title]='"Model and effort"|translate')
+                i.fas.fa-microchip.me-1
+                span.tool-text {{modelLabel}}
+            .dropdown-menu.assist-menu(ngbDropdownMenu)
+                .dropdown-header(translate) Model
+                button.dropdown-item(*ngFor='let m of models', (click)='setModel(m.value)') {{m.label|translate}}
+                .dropdown-divider
+                .dropdown-header(translate) Effort
+                button.dropdown-item(*ngFor='let e of efforts', (click)='setEffort(e)')
+                    i.fas.fa-fw.me-2([class.fa-check]='effort === e')
+                    span {{e}}
+
+        .flex-grow-1
+
+        //- Permission mode, switched the way the terminal does it (Shift+Tab)
+        button.tool.tool-wide((click)='cycleMode()', [title]='"Switch the permission mode (Shift+Tab)"|translate')
+            i.fas.fa-shield-halved.me-1
+            span.tool-text {{modeLabel|translate}}
+
+        //- Send, or stop while it works and there is nothing to send
+        button.send(
+            (click)='sendOrStop()',
+            [class.stop]='busy && !text.trim()',
+            [disabled]='!busy && !text.trim()',
+            [title]='(busy && !text.trim() ? "Stop (Esc)" : busy ? "Queue until it is ready" : "Send")|translate'
+        )
+            i.fas.fa-stop(*ngIf='busy && !text.trim()')
+            i.fas.fa-paper-plane(*ngIf='!busy || text.trim()')

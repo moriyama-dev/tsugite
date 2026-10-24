@@ -182,6 +182,14 @@ export class SSHTabComponent extends ConnectableTerminalTabComponent<SSHProfile>
         }
     }
 
+    getRemoteExec (): ((command: string, input?: Buffer) => Promise<string>) | null {
+        const session = this.sshSession
+        if (!session?.open) {
+            return null
+        }
+        return (command, input) => session.exec(command, input)
+    }
+
     async getRecoveryToken (options?: GetRecoveryTokenOptions): Promise<RecoveryToken> {
         const token = await super.getRecoveryToken(options)
         if (this.profile.options.rememberCwd) {

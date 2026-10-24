@@ -879,6 +879,33 @@ export class SSHSession {
         this.ssh.disconnect()
     }
 
+    /**
+     * Runs one command without a PTY on the existing connection and collects its standard output.
+     * `input` is written to its standard input, followed by end of file.
+     */
+    async exec (command: string, input?: Buffer): Promise<string> {
+        if (!(this.ssh instanceof russh.AuthenticatedSSHClient)) {
+            throw new Error('Cannot run a command before auth')
+        }
+        const ch = await this.ssh.activateChannel(await this.ssh.openSessionChannel())
+        const chunks: Buffer[] = []
+        const done = new Promise<void>(resolve => {
+            ch.data$.subscribe(data => chunks.push(Buffer.from(data)))
+            ch.closed$.subscribe(() => resolve())
+        })
+        await ch.requestExec(command)
+        if (input) {
+            // Large inputs go in pieces so a single SSH packet never has to hold the whole file
+            for (let offset = 0; offset < input.length; offset += 32768) {
+                const piece = input.subarray(offset, offset + 32768)
+                await ch.write(new Uint8Array(piece.buffer, piece.byteOffset, piece.byteLength))
+            }
+        }
+        await ch.eof()
+        await done
+        return Buffer.concat(chunks).toString('utf-8')
+    }
+
     async openShellChannel (options: SSHShellChannelOptions): Promise<russh.Channel> {
         if (!(this.ssh instanceof russh.AuthenticatedSSHClient)) {
             throw new Error('Cannot open shell channel before auth')
