@@ -18,9 +18,11 @@ const REMOTE_SCRIPT = [
     'if ! command -v claude >/dev/null 2>&1; then printf "%s [y/N] " "$2"; read a; case "$a" in y|Y|yes) if command -v curl >/dev/null 2>&1; then curl -fsSL https://claude.ai/install.sh | bash; else wget -qO- https://claude.ai/install.sh | bash; fi || exit 1;; *) exit 0;; esac; fi',
     // tmux keeps Claude running when the tab closes; an already running tmux server does not see
     // the PATH set above, so claude is started by its full path. Its titles are passed through so Tsugite can
-    // follow the work, and its status bar is hidden because Tsugite shows the state itself
-    'if command -v tmux >/dev/null 2>&1; then tmux has-session -t "$3" 2>/dev/null || tmux -u new-session -d -s "$3" "$(command -v claude)"; tmux set-option -t "$3" set-titles on; tmux set-option -t "$3" set-titles-string "#T"; tmux set-option -t "$3" status off; exec tmux -u attach-session -t "$3"; fi',
-    'exec claude',
+    // follow the work, and its status bar is hidden because Tsugite shows the state itself.
+    // CLAUDE_CODE_HIDE_CWD drops the folder line from Claude Code's start-up header (the work panel
+    // and the tab already say where it runs); it is set on the command so a running tmux server gets it too
+    'if command -v tmux >/dev/null 2>&1; then tmux has-session -t "$3" 2>/dev/null || tmux -u new-session -d -s "$3" "env CLAUDE_CODE_HIDE_CWD=1 $(command -v claude)"; tmux set-option -t "$3" set-titles on; tmux set-option -t "$3" set-titles-string "#T"; tmux set-option -t "$3" status off; exec tmux -u attach-session -t "$3"; fi',
+    'CLAUDE_CODE_HIDE_CWD=1 exec claude',
 ].join('; ')
 
 @Injectable({ providedIn: 'root' })
