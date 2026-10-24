@@ -94,6 +94,10 @@ deb:
   afterInstall: build/linux/after-install.tpl
   afterRemove: build/linux/after-remove.tpl
 electronFuses:
+  # Flipping fuses rewrites the Electron Framework binary, which breaks its ad-hoc
+  # signature; without a Developer ID nothing re-signs it, so Apple Silicon kills
+  # the app at launch (Code Signature Invalid). Re-sign the whole app ad hoc.
+  resetAdHocDarwinSignature: true
   runAsNode: false
   enableNodeOptionsEnvironmentVariable: false
   enableNodeCliInspectArguments: false

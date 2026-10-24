@@ -132,6 +132,10 @@ jobs:
         env:
           USE_HARD_LINKS: false
 
+      # An invalid signature only shows up as a crash at launch, so check it here
+      - name: Verify the signature
+        run: codesign --verify --deep --strict --verbose=2 dist/mac*/Tsugite.app
+
       - name: Collect the packages
         env:
           RELEASE_VERSION: ${{ needs.version.outputs.version }}
