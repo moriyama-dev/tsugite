@@ -70,6 +70,8 @@ export class BaseTerminalTabComponent<P extends BaseTerminalProfile> extends Bas
     session: BaseSession|null = null
     savedState?: any
     savedStateIsLive = false
+    /** Set once anything is typed or sent after a restore; until then the restored state is saved as is */
+    private inputSinceRestore = false
 
     @Input() zoom = 0
 
@@ -516,9 +518,24 @@ export class BaseTerminalTabComponent<P extends BaseTerminalProfile> extends Bas
             data = Buffer.from(data, 'utf-8')
         }
         this.session?.feedFromTerminal(data)
-        if (this.config.store.terminal.scrollOnInput && !data.equals(OSC_FOCUS_IN) && !data.equals(OSC_FOCUS_OUT)) {
-            this.frontend?.scrollToBottom()
+        if (!data.equals(OSC_FOCUS_IN) && !data.equals(OSC_FOCUS_OUT)) {
+            this.inputSinceRestore = true
+            if (this.config.store.terminal.scrollOnInput) {
+                this.frontend?.scrollToBottom()
+            }
         }
+    }
+
+    /**
+     * The terminal contents to keep for the next launch. A restored tab that nobody has used
+     * keeps what it was restored from, so the restore marker and a fresh prompt are not added
+     * again on every launch.
+     */
+    protected saveFrontendState (): any {
+        if (this.savedState && !this.savedStateIsLive && !this.inputSinceRestore) {
+            return this.savedState
+        }
+        return this.frontend?.saveState()
     }
 
     /**

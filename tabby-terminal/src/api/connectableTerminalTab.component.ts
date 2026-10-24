@@ -107,7 +107,7 @@ export abstract class ConnectableTerminalTabComponent<P extends ConnectableTermi
         return {
             type: `app:${this.profile.type}-tab`,
             profile: this.profile,
-            savedState: options?.includeState && this.frontend?.saveState(),
+            savedState: options?.includeState && this.saveFrontendState(),
         }
     }
 

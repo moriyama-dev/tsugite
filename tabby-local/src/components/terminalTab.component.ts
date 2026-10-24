@@ -87,7 +87,7 @@ export class TerminalTabComponent extends BaseTerminalTabComponent<LocalProfile>
                     restoreFromPTYID: options?.includeState && this.session?.getID(),
                 },
             },
-            savedState: options?.includeState && this.frontend?.saveState(),
+            savedState: options?.includeState && this.saveFrontendState(),
         }
     }
 
