@@ -4,9 +4,9 @@
 cask "tsugite" do
   arch arm: "arm64", intel: "x86_64"
 
-  version "0.2.1"
-  sha256 arm:   "5a6a6058f09e645299f07e1a5b63563678d9e20a76038230b2c83a3963cd80ae",
-         intel: "98f0c02783fa3db58d769aba47a46d3728692542068abf810d8d3ed8217f072a"
+  version "0.3.0"
+  sha256 arm:   "48b1549468f67af90c6de24f3b1e1d19b1f5c2a3d06a4a3a9cd1078b2308bef8",
+         intel: "3baa63b670cfef5418ae2d0f5c72ba1ba3100f40d653b17787378c076e5d931b"
 
   url "https://github.com/moriyama-dev/tsugite/releases/download/#{version}/tsugite-#{version}-macos-#{arch}.dmg"
   name "Tsugite"
