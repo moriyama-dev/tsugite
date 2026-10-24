@@ -1,6 +1,8 @@
 import { Injectable } from '@angular/core'
 import { BehaviorSubject, Observable } from 'rxjs'
 import { execFile } from 'child_process'
+import * as fs from 'fs'
+import * as os from 'os'
 import { HostAppService, Platform } from '../api/hostApp'
 import { ConfigService } from './config.service'
 
@@ -36,6 +38,8 @@ export class TailscaleService {
     private machines = new BehaviorSubject<TailscaleMachine[]>([])
     private state = new BehaviorSubject<TailscaleState>('loading')
     private binary: string | null = null
+    /** macOS: run the CLI in the user's launchd session (see runBinary) */
+    private viaLaunchctl = false
     private timer: number | null = null
     private refreshing = false
 
@@ -157,12 +161,12 @@ export class TailscaleService {
 
     private async run (args: string[]): Promise<string> {
         if (this.binary) {
-            return this.execFile(this.binary, args)
+            return this.runBinary(this.binary, args)
         }
         let lastError: any = null
         for (const candidate of this.candidates()) {
             try {
-                const result = await this.execFile(candidate, args)
+                const result = await this.runBinary(candidate, args)
                 this.binary = candidate
                 return result
             } catch (e) {
@@ -174,18 +178,31 @@ export class TailscaleService {
                 }
             }
         }
-        throw lastError
+        throw lastError ?? Object.assign(new Error('tailscale not found'), { code: 'ENOENT' })
+    }
+
+    private async runBinary (binary: string, args: string[]): Promise<string> {
+        if (this.viaLaunchctl) {
+            return this.execFile('/bin/launchctl', ['asuser', String(os.userInfo().uid), binary, ...args])
+        }
+        const output = await this.execFile(binary, args)
+        // The CLI inside Tailscale.app, started outside the user's launchd session (as child
+        // processes of this app are), tries to start the GUI instead and prints this with exit code 0
+        if (this.hostApp.platform === Platform.macOS && output.includes('GUI failed to start')) {
+            this.viaLaunchctl = true
+            return this.runBinary(binary, args)
+        }
+        return output
     }
 
     private candidates (): string[] {
         if (this.hostApp.platform === Platform.macOS) {
-            // Apps launched from Finder get a minimal PATH, so look in the usual install locations too
+            // Apps launched from Finder get a minimal PATH, so look in the usual install locations
             return [
-                'tailscale',
                 '/opt/homebrew/bin/tailscale',
                 '/usr/local/bin/tailscale',
                 '/Applications/Tailscale.app/Contents/MacOS/Tailscale',
-            ]
+            ].filter(x => fs.existsSync(x))
         }
         return ['tailscale', '/usr/bin/tailscale', '/usr/local/bin/tailscale', '/snap/bin/tailscale']
     }
