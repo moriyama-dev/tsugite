@@ -25,6 +25,7 @@ export interface TailscaleMachineSettings {
 export type TailscaleState = 'loading' | 'ready' | 'not-installed' | 'stopped' | 'error'
 
 const REFRESH_INTERVAL = 30000
+const COMMAND_TIMEOUT = 10000
 
 @Injectable({ providedIn: 'root' })
 export class TailscaleService {
@@ -36,6 +37,7 @@ export class TailscaleService {
     private state = new BehaviorSubject<TailscaleState>('loading')
     private binary: string | null = null
     private timer: number | null = null
+    private refreshing = false
 
     constructor (
         private config: ConfigService,
@@ -59,6 +61,23 @@ export class TailscaleService {
     }
 
     async refresh (): Promise<void> {
+        if (this.refreshing) {
+            return
+        }
+        this.refreshing = true
+        try {
+            await this.doRefresh()
+        } catch (e) {
+            // Anything unexpected must still move out of "loading", or the sidebar waits forever
+            this.error = String(e.message ?? e).trim()
+            this.state.next('error')
+            this.machines.next([])
+        } finally {
+            this.refreshing = false
+        }
+    }
+
+    private async doRefresh (): Promise<void> {
         let output = ''
         try {
             output = await this.run(['status', '--json'])
@@ -73,7 +92,12 @@ export class TailscaleService {
             return
         }
 
-        const status = JSON.parse(output)
+        let status: any = null
+        try {
+            status = JSON.parse(output)
+        } catch {
+            throw new Error(`Unexpected output from ${this.binary}: ${output.trim().slice(0, 200) || '(empty)'}`)
+        }
         if (status.BackendState !== 'Running') {
             this.state.next('stopped')
             this.machines.next([])
@@ -168,7 +192,11 @@ export class TailscaleService {
 
     private execFile (file: string, args: string[]): Promise<string> {
         return new Promise((resolve, reject) => {
-            execFile(file, args, { timeout: 10000, maxBuffer: 16 * 1024 * 1024 }, (error, stdout, stderr) => {
+            // execFile's own timeout kills the child but still waits for its output to close,
+            // which never happens if something it started keeps the pipe open
+            let timer: ReturnType<typeof setTimeout> | undefined = undefined
+            const child = execFile(file, args, { maxBuffer: 16 * 1024 * 1024 }, (error, stdout, stderr) => {
+                clearTimeout(timer)
                 if (error) {
                     if (stderr) {
                         error.message = stderr.toString()
@@ -178,6 +206,10 @@ export class TailscaleService {
                 }
                 resolve(stdout.toString())
             })
+            timer = setTimeout(() => {
+                child.kill('SIGKILL')
+                reject(new Error(`${file} ${args.join(' ')} did not answer within ${COMMAND_TIMEOUT / 1000} seconds`))
+            }, COMMAND_TIMEOUT)
         })
     }
 }
