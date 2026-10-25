@@ -31,10 +31,13 @@ const args = [`--remote-debugging-port=${PORT}`, '--enable-logging=stderr']
 if (process.platform === 'linux') {
     args.push('--no-sandbox')
 }
-const app = spawn(exe, args, {
-    env: { ...process.env, TABBY_CONFIG_DIRECTORY: configDir },
-    stdio: ['ignore', log, log],
-})
+// Finder, the Dock and launchd start the app without a terminal's variables, and Tailscale.app's
+// binary reads those to decide whether it is the CLI or the GUI, so run it the way they do
+const env = { ...process.env, TABBY_CONFIG_DIRECTORY: configDir }
+for (const name of ['TERM', 'TERM_PROGRAM', 'SHLVL', 'PS1', 'TAILSCALE_BE_CLI', 'ELECTRON_RUN_AS_NODE']) {
+    delete env[name]
+}
+const app = spawn(exe, args, { env, stdio: ['ignore', log, log] })
 let exited = null
 app.on('exit', (code, signal) => { exited = { code, signal } })
 
@@ -131,6 +134,8 @@ try {
         if (notes) {
             // Only the first note: on a runner it is the Tailscale status, never a machine list
             console.log(`     Tailscale section: ${notes[0]}`)
+            // What Tailscale.app's binary prints when it took itself for the GUI (see tailscale.service.ts)
+            check(!notes[0].includes('GUI failed to start'), 'the Tailscale CLI ran as a CLI, not as the GUI')
         }
 
         // Give a late crash a chance to show up

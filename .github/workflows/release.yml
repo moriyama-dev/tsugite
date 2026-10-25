@@ -139,6 +139,25 @@ jobs:
       - name: Verify the signature
         run: codesign --verify --deep --strict --verbose=2 dist/mac*/Tsugite.app
 
+      # Tailscale.app's executable acts as the GUI unless the environment says it is a CLI, which
+      # once broke the Tailscale section (0.3.2-0.3.4). Put the public standalone app (never signed
+      # in, so nothing leaves the runner) where the launch test's app will look for it.
+      - name: Install the Tailscale app for the launch test
+        if: matrix.arch == 'arm64'
+        continue-on-error: true
+        env:
+          TAILSCALE_VERSION: 1.104.2
+        run: |
+          curl -fsSL -o "${RUNNER_TEMP}/tailscale.zip" "https://pkgs.tailscale.com/stable/Tailscale-${TAILSCALE_VERSION}-macos.zip"
+          ditto -x -k "${RUNNER_TEMP}/tailscale.zip" "${RUNNER_TEMP}/tailscale"
+          APP="$( find "${RUNNER_TEMP}/tailscale" -maxdepth 2 -name Tailscale.app | head -n 1 )"
+          sudo ditto "${APP}" /Applications/Tailscale.app
+          CLI=/Applications/Tailscale.app/Contents/MacOS/Tailscale
+          echo "--- without a terminal's variables (what a Finder-launched app gets):"
+          perl -e 'alarm 20; exec @ARGV' -- env -i HOME="${HOME}" "${CLI}" status --json || true
+          echo "--- with TAILSCALE_BE_CLI=1 (what Tsugite passes):"
+          perl -e 'alarm 20; exec @ARGV' -- env -i HOME="${HOME}" TAILSCALE_BE_CLI=1 "${CLI}" status --json || true
+
       # The x86_64 build cannot run on the Apple Silicon runner
       - name: Launch the app
         if: matrix.arch == 'arm64'

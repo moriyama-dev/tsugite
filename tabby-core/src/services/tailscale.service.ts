@@ -2,7 +2,6 @@ import { Injectable } from '@angular/core'
 import { BehaviorSubject, Observable } from 'rxjs'
 import { execFile } from 'child_process'
 import * as fs from 'fs'
-import * as os from 'os'
 import { HostAppService, Platform } from '../api/hostApp'
 import { ConfigService } from './config.service'
 
@@ -28,6 +27,12 @@ export type TailscaleState = 'loading' | 'ready' | 'not-installed' | 'stopped' |
 
 const REFRESH_INTERVAL = 30000
 const COMMAND_TIMEOUT = 10000
+// The Tailscale app on macOS (App Store and standalone) is one executable for the GUI and
+// the CLI. It decides which it is from the environment (TERM, SHLVL, TERM_PROGRAM, PS1), and
+// an app started from Finder passes none of those to its children, so it would take itself
+// for the GUI, print "The Tailscale GUI failed to start" and exit 0. This is Tailscale's
+// own switch for scripts; the other CLIs ignore it.
+const CLI_ENV = { ...process.env, TAILSCALE_BE_CLI: '1' }
 
 @Injectable({ providedIn: 'root' })
 export class TailscaleService {
@@ -38,8 +43,6 @@ export class TailscaleService {
     private machines = new BehaviorSubject<TailscaleMachine[]>([])
     private state = new BehaviorSubject<TailscaleState>('loading')
     private binary: string | null = null
-    /** macOS: run the CLI in the user's launchd session (see runBinary) */
-    private viaLaunchctl = false
     private timer: number | null = null
     private refreshing = false
 
@@ -163,34 +166,34 @@ export class TailscaleService {
         if (this.binary) {
             return this.runBinary(this.binary, args)
         }
-        let lastError: any = null
+        // Several CLIs can be installed at once (Homebrew's next to the app's), and one of them
+        // may talk to a daemon that is not the one the user signed in to, so ask each in turn
+        let firstError: any = null
         for (const candidate of this.candidates()) {
             try {
                 const result = await this.runBinary(candidate, args)
                 this.binary = candidate
                 return result
             } catch (e) {
-                lastError = e
-                if (e.code !== 'ENOENT') {
-                    // The binary exists but complained (e.g. tailscaled is not running)
-                    this.binary = candidate
-                    throw e
+                if (e.code === 'ENOENT') {
+                    continue
                 }
+                // The binary exists but complained (e.g. tailscaled is not running). Report the
+                // first one, and keep asking all of them next time: another may start answering
+                firstError ??= e
             }
         }
-        throw lastError ?? Object.assign(new Error('tailscale not found'), { code: 'ENOENT' })
+        if (firstError) {
+            throw firstError
+        }
+        throw Object.assign(new Error('tailscale not found'), { code: 'ENOENT' })
     }
 
     private async runBinary (binary: string, args: string[]): Promise<string> {
-        if (this.viaLaunchctl) {
-            return this.execFile('/bin/launchctl', ['asuser', String(os.userInfo().uid), binary, ...args])
-        }
         const output = await this.execFile(binary, args)
-        // The CLI inside Tailscale.app, started outside the user's launchd session (as child
-        // processes of this app are), tries to start the GUI instead and prints this with exit code 0
-        if (this.hostApp.platform === Platform.macOS && output.includes('GUI failed to start')) {
-            this.viaLaunchctl = true
-            return this.runBinary(binary, args)
+        if (output.includes('GUI failed to start')) {
+            // Cannot happen with CLI_ENV; keep it from being reported as broken JSON if it does
+            throw new Error(`${binary} ran as the Tailscale GUI instead of the CLI: ${output.trim()}`)
         }
         return output
     }
@@ -212,7 +215,7 @@ export class TailscaleService {
             // execFile's own timeout kills the child but still waits for its output to close,
             // which never happens if something it started keeps the pipe open
             let timer: ReturnType<typeof setTimeout> | undefined = undefined
-            const child = execFile(file, args, { maxBuffer: 16 * 1024 * 1024 }, (error, stdout, stderr) => {
+            const child = execFile(file, args, { maxBuffer: 16 * 1024 * 1024, env: CLI_ENV }, (error, stdout, stderr) => {
                 clearTimeout(timer)
                 if (error) {
                     if (stderr) {
