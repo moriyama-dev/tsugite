@@ -24,6 +24,7 @@ import { ExportTerminalContextMenu } from './terminalContextMenu'
 import { OpenSSHImporter, PrivateKeyLocator, StaticFileImporter } from './sshImporters'
 import { ElectronPTYInterface } from './pty'
 import { PathDropDecorator } from './pathDrop'
+import { FolderDropService } from './folderDrop'
 
 import { CmderShellProvider } from './shells/cmder'
 import { Cygwin32ShellProvider } from './shells/cygwin32'
@@ -94,7 +95,10 @@ export default class ElectronModule {
         themeService: ThemesService,
         app: AppService,
         dockMenu: DockMenuService,
+        folderDrop: FolderDropService,
     ) {
+        folderDrop.init()
+
         config.ready$.toPromise().then(() => {
             touchbar.update()
             docking.dock()

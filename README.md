@@ -18,6 +18,8 @@ start [Claude Code](https://claude.com/claude-code) there in the folder you choo
   permission mode, send), the current state with a timer, a send queue and desktop
   notifications. Claude Code's output is shown exactly as it is; the panel types into it and
   covers its now redundant input box.
+- Drop a folder from Finder or your file manager onto the window to open a terminal in it.
+  Dropped files are typed into the terminal as paths.
 - Tabs, split panes, a vault for passwords and keys, themes and color schemes.
 - No file browser, no telemetry, no self-updater (updates come through apt and Homebrew).
 
@@ -93,6 +95,10 @@ you to sign in: it prints a URL; open it in your browser. Installing `tmux` on t
 remote machine is recommended (`sudo apt install tmux`, `brew install tmux`): closing
 the tab then leaves Claude running, and starting it again reattaches.
 
+Tsugite marks the working folder as trusted in the remote `~/.claude.json` before it
+starts Claude, so Claude Code does not ask "Do you trust this folder?" each time. This
+needs `python3` on the remote machine; without it Claude Code asks as before.
+
 On a macOS remote machine:
 
 - Turn on **System Settings → General → Sharing → Remote Login** for SSH.
@@ -163,6 +169,7 @@ Tailscale につながっているマシンを一覧表示し、クリックひ�
 - **SSH 接続** セクション：Tailscale に入っていないサーバー用です。ホスト、ポート、鍵、踏み台、プロキシ、ポート転送、ログインスクリプトを設定できます。`~/.ssh/config` のホストも表示されます
 - **Claude Code を起動**：ログインして作業フォルダに移動し、`tmux` の中で `claude` を実行します。回線が切れても続きから再開できます。Claude Code が入っていなければ、導入するか確認します
 - そのターミナルの下の **作業パネル**：日本語入力しやすい入力欄と、その下のボタンの列（添付、コマンド、履歴、モデル、許可モード、送信）、今の状態と経過時間、送信キュー、デスクトップ通知。Claude Code の出力はそのまま表示し、パネルはそこへ入力するだけです。不要になったターミナル側の入力欄は隠します
+- Finder やファイルマネージャーからフォルダをウィンドウにドロップすると、そのフォルダでターミナルが開きます。ファイルをドロップすると、そのパスがターミナルに入力されます
 - タブ、画面分割、パスワードと鍵を守る Vault、テーマと配色
 - ファイルブラウザー、利用状況の送信、自動アップデート機能はありません（更新は apt と Homebrew で行います）
 
@@ -212,6 +219,8 @@ sudo apt install tsugite
 **SSH 接続**：**SSH 接続** の見出しの **＋** から、Tailnet にないサーバーを追加します。各接続に **Claude Code の作業フォルダ** の欄と、杖のボタンがあります。
 
 **接続先の Claude Code**：接続先は Linux か macOS で、`sh` が必要です。初回は Claude Code がログイン用の URL を表示するので、手元のブラウザで開いてください。接続先に `tmux` を入れておくのがおすすめです（`sudo apt install tmux`、`brew install tmux`）。タブを閉じても Claude が動き続け、もう一度起動するとそのまま戻れます。
+
+Tsugite は Claude を起動する前に、接続先の `~/.claude.json` に作業フォルダを「信頼済み」と書き込みます。そのため、毎回「Yes, I trust this folder」を選ぶ必要はありません。接続先に `python3` が必要で、無いときはこれまでどおり Claude Code が確認します。
 
 接続先が macOS のとき：
 
