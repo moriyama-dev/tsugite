@@ -10,7 +10,7 @@ cask "tsugite" do
 
   url "https://github.com/moriyama-dev/tsugite/releases/download/#{version}/tsugite-#{version}-macos-#{arch}.dmg"
   name "Tsugite"
-  desc "Terminal-first SSH client with Tailscale and Claude Code"
+  desc "Terminal with Tailscale machines and a file explorer that follows your shell"
   homepage "https://github.com/moriyama-dev/tsugite"
 
   depends_on macos: ">= :monterey"
