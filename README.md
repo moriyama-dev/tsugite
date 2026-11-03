@@ -2,29 +2,25 @@
 
 **English** | [日本語](#日本語)
 
-Tsugite is a terminal-first SSH client for Linux and macOS. It lists the machines
-on your Tailscale network, opens a terminal on any of them with one click, and can
-start [Claude Code](https://claude.com/claude-code) there in the folder you choose.
+Tsugite is a terminal for Linux and macOS, built on [Tabby](https://github.com/Eugeny/tabby).
+It adds two things to it: the machines on your Tailscale network in the side panel, and
+an explorer that shows the folder your terminal is in, the way VS Code's explorer does.
 
-- **Tailscale** section in the side panel: every machine on your tailnet, online ones
-  first, refreshed every 30 seconds. Offline machines are one click away.
-- **SSH connections** section for everything else: host, port, keys, jump hosts,
+- **Tailscale** in the side panel: every machine on your tailnet, opened with a
+  double-click. Online and offline machines are in lists you can fold, and you can sort
+  machines into groups of your own.
+- **Explorer** under it: the files of the folder the focused terminal is in, following
+  every `cd`, on this computer and on SSH servers. Open, create, rename and delete
+  files and folders, copy a path, or `cd` the terminal into a folder.
+- **SSH connections** for servers outside your tailnet: host, port, keys, jump hosts,
   proxies, port forwarding and login scripts. Hosts in `~/.ssh/config` show up too.
-- **Start Claude Code** on any machine: Tsugite logs in, changes into the working folder,
-  and runs `claude` inside `tmux`, so a dropped connection picks up where it left off.
-  If Claude Code is missing it offers to install it.
-- **Work panel** under that terminal: an input box that is easy to use with Japanese and
-  other input methods, with a row of tools under it (attach, commands, history, model,
-  permission mode, send), the current state with a timer, a send queue and desktop
-  notifications. Claude Code's output is shown exactly as it is; the panel types into it and
-  covers its now redundant input box.
 - Drop a folder from Finder or your file manager onto the window to open a terminal in it.
   Dropped files are typed into the terminal as paths.
 - Tabs, split panes, a vault for passwords and keys, themes and color schemes.
-- No file browser, no telemetry, no self-updater (updates come through apt and Homebrew).
+- No telemetry, no self-updater (updates come through apt and Homebrew).
 
-Tsugite is a fork of [Tabby](https://github.com/Eugeny/tabby) (MIT). On first start it
-imports your existing Tabby settings, so saved SSH connections carry over.
+Tsugite is a fork of Tabby (MIT). On first start it imports your existing Tabby
+settings, so saved SSH connections carry over.
 
 ## Install
 
@@ -62,13 +58,17 @@ are also on the [Releases](https://github.com/moriyama-dev/tsugite/releases) pag
 ### Tailscale machines
 
 Install [Tailscale](https://tailscale.com/download) on this computer and sign in;
-the machines appear in the side panel. Hover a machine for three buttons:
+the machines appear in the side panel, refreshed every 30 seconds.
 
-| Button | What it does |
-|---|---|
-| Terminal | Opens an SSH session (double-click does the same) |
-| Wand | Starts Claude Code on the machine |
-| Gear | Username, authentication and Claude Code working folder for this machine |
+- **Online** and **Offline** list the machines that are in no group. Click a heading
+  to fold it; Offline starts folded. Folded lists stay folded the next time.
+- **Groups**: click the folder button on the **Tailscale** heading (or right-click it)
+  to make one, then drag machines onto it, or right-click a machine →
+  **Move to group**. Drag a machine onto Online, Offline or the Tailscale heading to
+  take it out of its group. Right-click a group to rename or delete it; deleting a
+  group keeps its machines.
+- Double-click a machine, or use its terminal button, to open an SSH session. The gear
+  button sets the username and authentication for that machine.
 
 Two ways to log in, chosen per machine:
 
@@ -83,58 +83,46 @@ from the right-click menu on the **Tailscale** heading. Right-click a machine to
 its address or save it as a regular SSH connection (for port forwarding and other
 advanced options).
 
+On a macOS remote machine, turn on **System Settings → General → Sharing → Remote
+Login**. The Tailscale app for macOS cannot act as a Tailscale SSH server, so use
+**SSH key** for Macs.
+
+### Explorer
+
+The explorer shows the folder of the terminal you are typing in (in a split tab, the
+focused pane) and follows it as you `cd`.
+
+- Click a folder to open it; double-click a file (or press Enter) to open it in the app
+  your system picks. A file on an SSH server is fetched to a temporary folder first, and
+  each time you save it there it is sent back to the server.
+- Right-click for **Open in terminal** (`cd` there), **New file**, **New folder**,
+  **Copy path** (the absolute path), **Rename** (F2) and **Delete** (Delete key).
+  On this computer, deleted items go to the trash; on a server they are deleted for good,
+  so Tsugite asks first.
+- Hover an item for its size, permissions and modification time.
+- Like VS Code, it does not show `.git`, `.DS_Store` and a few other such files.
+
+To follow the folder on an SSH server, the shell there has to say where it is after
+each command (with the OSC 7 escape code). When it connects, Tsugite sets that up:
+
+- It writes `~/.config/tsugite/tsugite.bash` and `tsugite.zsh` on the server, and adds
+  one line that loads them to `~/.bashrc` (and to `~/.bash_profile` if that does not
+  load `~/.bashrc`) or `~/.zshrc`, for the shells in use. For fish it puts
+  `~/.config/fish/conf.d/tsugite.fish`. Nothing else is changed.
+- Other terminals ignore OSC 7, so the line does no harm elsewhere.
+- To undo it, delete the lines that end in `# Added by Tsugite…`, `~/.config/tsugite`
+  and `~/.config/fish/conf.d/tsugite.fish`. To stop Tsugite from adding them, turn off
+  **Settings → SSH → Let the explorer follow the folder you are in**.
+- Inside `tmux` on the server, the folder reaches Tsugite only with
+  `set -g allow-passthrough on` in `~/.tmux.conf`.
+- Until the shell reports its folder (or with a shell other than bash, zsh and fish),
+  the explorer shows the home folder.
+
+Local terminals need none of this: Tsugite reads the folder from the system.
+
 ### SSH connections
 
-Click **+** next to **SSH connections** to add a host that is not on your tailnet.
-Each connection has a **Claude Code working folder** field and the same wand button.
-
-### Claude Code on the remote machine
-
-The remote machine needs Linux or macOS and `sh`. The first time, Claude Code asks
-you to sign in: it prints a URL; open it in your browser. Installing `tmux` on the
-remote machine is recommended (`sudo apt install tmux`, `brew install tmux`): closing
-the tab then leaves Claude running, and starting it again reattaches.
-
-Tsugite marks the working folder as trusted in the remote `~/.claude.json` before it
-starts Claude, so Claude Code does not ask "Do you trust this folder?" each time. This
-needs `python3` on the remote machine; without it Claude Code asks as before.
-
-On a macOS remote machine:
-
-- Turn on **System Settings → General → Sharing → Remote Login** for SSH.
-- The Tailscale app from the App Store or tailscale.com cannot act as a Tailscale SSH
-  server; use **SSH key** for Macs.
-- Claude Code keeps its login in the keychain, which is locked in SSH sessions. If it
-  asks you to sign in every time, run `security unlock-keychain` first.
-
-### Work panel
-
-Tabs started with the wand button get a panel under the terminal.
-
-- **Input**: Enter sends, Shift+Enter adds a line (or switch to Ctrl/⌘+Enter in the panel
-  settings). Enter never sends while an input method is converting. ↑ at the start of the box
-  recalls earlier prompts; drafts are kept per machine. The prompt is pasted into the
-  terminal and submitted, so line breaks survive.
-- **Tools under the input**, left to right:
-  - **Paper clip**: send an image from the clipboard or files from this computer to the
-    remote machine (`~/.cache/tsugite/attachments`), or pick a file that is already there;
-    either way `@path` goes into the input. Images pasted into the input are sent the same way.
-  - **/**: Claude Code's commands (`/resume`, `/compact`, `/context`, `/model`, `/effort`,
-    `/status`, `/mcp`, `/config`, `/clear`, `/help`).
-  - **Clock**: open a past conversation, the prompts sent from this tab with how long each
-    run took, and your prompt history.
-  - **Model**: the model and effort, switched with `/model` and `/effort`.
-  - **Shield** (right): the permission mode; clicking switches it like Shift+Tab does.
-  - **Send**: while Claude Code works, what you send is queued until it is ready again; with
-    an empty input the button stops the run (Esc).
-- **State** above the input: working, waiting for your answer or ready, with a timer, read
-  from the title Claude Code gives the terminal and from the question on screen. The side
-  panel shows the same next to the machine. When Claude Code asks something, the panel offers
-  **1 2 3 ↑ ↓ Enter** as keys; nothing is ever answered for you.
-- **The input inside the terminal is hidden** while the panel's input is in use. It shows
-  again whenever Claude Code asks a question, and clicking where it was lets you type in the
-  terminal directly. Turn this off in the panel settings (sliders button).
-- **Notifications** when a run finishes or needs an answer and you are looking elsewhere.
+Click **+** next to **SSH connections** to add a server that is not on your tailnet.
 
 ## Building from source
 
@@ -152,29 +140,24 @@ node scripts/build-linux.mjs           # or build-macos.mjs; output in dist/
 
 MIT. Copyright (c) 2017 Tabby Developers, (c) 2026 Yoshiro Moriyama. See [LICENSE](LICENSE).
 
-Claude and Claude Code are trademarks of Anthropic, PBC; Tailscale is a trademark of
-Tailscale Inc. Tsugite is an independent project, not affiliated with or endorsed by
-either. It does not include Claude Code: it starts the copy installed on your machine,
-signed in with your own account and subject to Anthropic's terms.
+Tailscale is a trademark of Tailscale Inc. Tsugite is an independent project, not
+affiliated with or endorsed by Tailscale Inc. or the Tabby developers.
 
 ---
 
 ## 日本語
 
-Tsugite（継手）は、ターミナルが主役の SSH クライアントです（Linux・macOS）。
-Tailscale につながっているマシンを一覧表示し、クリックひとつでターミナルを開いたり、
-指定したフォルダで [Claude Code](https://claude.com/claude-code) を起動したりできます。
+Tsugite（継手）は、[Tabby](https://github.com/Eugeny/tabby) をもとにした Linux・macOS 用のターミナルです。
+Tabby に、次の2つを足しています。サイドバーに並ぶ Tailscale のマシンと、VS Code のエクスプローラーのように、ターミナルが今いるフォルダーを表示するエクスプローラーです。
 
-- サイドバーの **Tailscale** セクション：Tailnet 上のマシンを、オンラインのものから順に表示します（30秒ごとに更新）。オフラインのマシンもワンクリックで表示できます
-- **SSH 接続** セクション：Tailscale に入っていないサーバー用です。ホスト、ポート、鍵、踏み台、プロキシ、ポート転送、ログインスクリプトを設定できます。`~/.ssh/config` のホストも表示されます
-- **Claude Code を起動**：ログインして作業フォルダに移動し、`tmux` の中で `claude` を実行します。回線が切れても続きから再開できます。Claude Code が入っていなければ、導入するか確認します
-- そのターミナルの下の **作業パネル**：日本語入力しやすい入力欄と、その下のボタンの列（添付、コマンド、履歴、モデル、許可モード、送信）、今の状態と経過時間、送信キュー、デスクトップ通知。Claude Code の出力はそのまま表示し、パネルはそこへ入力するだけです。不要になったターミナル側の入力欄は隠します
-- Finder やファイルマネージャーからフォルダをウィンドウにドロップすると、そのフォルダでターミナルが開きます。ファイルをドロップすると、そのパスがターミナルに入力されます
+- サイドバーの **Tailscale**：Tailnet 上のマシンを一覧表示し、ダブルクリックで接続します。オンラインとオフラインのマシンは、それぞれ折りたためる一覧に分かれています。自分で作ったグループにマシンを分けることもできます
+- その下の **エクスプローラー**：操作中のターミナルが今いるフォルダーのファイルを表示し、`cd` するたびに追従します。このコンピューターでも、SSH の接続先でも使えます。ファイルやフォルダーを開く・作る・名前を変える・削除する、パスをコピーする、ターミナルでそのフォルダーに移動する、ができます
+- **SSH 接続**：Tailnet にないサーバー用です。ホスト、ポート、鍵、踏み台、プロキシ、ポート転送、ログインスクリプトを設定できます。`~/.ssh/config` のホストも表示されます
+- Finder やファイルマネージャーからフォルダーをウィンドウにドロップすると、そのフォルダーでターミナルが開きます。ファイルをドロップすると、そのパスがターミナルに入力されます
 - タブ、画面分割、パスワードと鍵を守る Vault、テーマと配色
-- ファイルブラウザー、利用状況の送信、自動アップデート機能はありません（更新は apt と Homebrew で行います）
+- 利用状況の送信、自動アップデート機能はありません（更新は apt と Homebrew で行います）
 
-Tsugite は [Tabby](https://github.com/Eugeny/tabby)（MIT ライセンス）のフォークです。
-初めて起動したときに Tabby の設定を引き継ぐので、保存済みの SSH 接続もそのまま使えます。
+Tsugite は Tabby（MIT ライセンス）のフォークです。初めて起動したときに Tabby の設定を引き継ぐので、保存済みの SSH 接続もそのまま使えます。
 
 ### インストール
 
@@ -201,13 +184,11 @@ sudo apt install tsugite
 
 ### 使い方
 
-**Tailscale のマシン**：このコンピューターに [Tailscale](https://tailscale.com/download) を入れてログインすると、サイドバーにマシンが並びます。マシンにマウスを乗せると、3つのボタンが出ます。
+**Tailscale のマシン**：このコンピューターに [Tailscale](https://tailscale.com/download) を入れてログインすると、サイドバーにマシンが並びます（30秒ごとに更新）。
 
-| ボタン | 動作 |
-|---|---|
-| ターミナル | SSH で接続します（ダブルクリックでも同じ） |
-| 杖 | そのマシンで Claude Code を起動します |
-| 歯車 | ユーザー名、認証方式、Claude Code の作業フォルダを設定します |
+- **オンライン** と **オフライン** には、どのグループにも入っていないマシンが並びます。見出しをクリックすると折りたためます。オフラインは最初は折りたたまれています。折りたたんだ状態は、次に起動したときもそのままです
+- **グループ**：**Tailscale** の見出しのフォルダーのボタン（または右クリック）で作り、マシンをドラッグして入れます。マシンを右クリック →「グループに移動」でも入れられます。オンライン・オフライン・Tailscale の見出しにドラッグすると、グループから外れます。グループを右クリックすると、名前の変更と削除ができます。グループを削除しても、中のマシンは消えません
+- マシンをダブルクリックするか、ターミナルのボタンで SSH 接続します。歯車のボタンで、そのマシンのユーザー名と認証方式を設定します
 
 ログインの方式はマシンごとに選べます。
 
@@ -216,32 +197,27 @@ sudo apt install tsugite
 
 ユーザー名の初期値は、このコンピューターのユーザー名です。マシンごとに変えるか、**Tailscale** の見出しの右クリックメニューで、全体の初期値を変えられます。マシンを右クリックすると、アドレスのコピーや、通常の SSH 接続として保存（ポート転送などの詳しい設定を使うため）ができます。
 
-**SSH 接続**：**SSH 接続** の見出しの **＋** から、Tailnet にないサーバーを追加します。各接続に **Claude Code の作業フォルダ** の欄と、杖のボタンがあります。
+接続先が macOS のときは、**システム設定 → 一般 → 共有 → リモートログイン** をオンにしてください。macOS 用の Tailscale アプリは Tailscale SSH のサーバーになれないので、Mac には **SSH 鍵** を使ってください。
 
-**接続先の Claude Code**：接続先は Linux か macOS で、`sh` が必要です。初回は Claude Code がログイン用の URL を表示するので、手元のブラウザで開いてください。接続先に `tmux` を入れておくのがおすすめです（`sudo apt install tmux`、`brew install tmux`）。タブを閉じても Claude が動き続け、もう一度起動するとそのまま戻れます。
+**エクスプローラー**：入力中のターミナル（画面分割のタブでは、フォーカスのある側）が今いるフォルダーを表示し、`cd` に追従します。
 
-Tsugite は Claude を起動する前に、接続先の `~/.claude.json` に作業フォルダを「信頼済み」と書き込みます。そのため、毎回「Yes, I trust this folder」を選ぶ必要はありません。接続先に `python3` が必要で、無いときはこれまでどおり Claude Code が確認します。
+- フォルダーはクリックで開きます。ファイルはダブルクリック（または Enter）で、OS が選ぶアプリで開きます。SSH の接続先のファイルは、いったん手元の一時フォルダーに取ってきて開き、保存するたびに接続先へ書き戻します
+- 右クリックで「ターミナルでここに移動」（`cd`）、「新しいファイル」「新しいフォルダー」「パスをコピー」（絶対パス）、「名前を変更」（F2）、「削除」（Delete キー）ができます。このコンピューターで削除したものはゴミ箱に入ります。接続先では完全に削除されるので、先に確認します
+- 項目にマウスを乗せると、サイズ・権限・更新日時が出ます
+- VS Code と同じく、`.git` や `.DS_Store` などは表示しません
 
-接続先が macOS のとき：
+SSH の接続先で場所に追従するには、接続先のシェルがコマンドのたびに今いる場所を知らせる（OSC 7 というエスケープコード）必要があります。Tsugite は接続するときに、これを設定します。
 
-- **システム設定 → 一般 → 共有 → リモートログイン** をオンにしてください
-- App Store 版や公式サイト版の Tailscale アプリは、Tailscale SSH のサーバーになれません。Mac には **SSH 鍵** を使ってください
-- Claude Code はログイン情報をキーチェーンに保存しますが、SSH 経由ではキーチェーンがロックされています。毎回ログインを求められる場合は、先に `security unlock-keychain` を実行してください
+- 接続先に `~/.config/tsugite/tsugite.bash` と `tsugite.zsh` を書き込み、使っているシェルの `~/.bashrc`（`~/.bashrc` を読まない `~/.bash_profile` があればそこにも）か `~/.zshrc` に、それを読み込む1行を足します。fish には `~/.config/fish/conf.d/tsugite.fish` を置きます。ほかは何も変えません
+- ほかのターミナルは OSC 7 を無視するので、ほかのターミナルで接続しても害はありません
+- 元に戻すには、`# Added by Tsugite…` で終わる行と、`~/.config/tsugite`、`~/.config/fish/conf.d/tsugite.fish` を消してください。足さないようにするには、**設定 → SSH →「エクスプローラーを今いる場所に追従させる」** をオフにします
+- 接続先の `tmux` の中では、`~/.tmux.conf` に `set -g allow-passthrough on` があるときだけ、場所が Tsugite に届きます
+- シェルから場所が届くまで（bash・zsh・fish 以外のシェルでも）、エクスプローラーはホームフォルダーを表示します
 
-**作業パネル**：杖のボタンで開いたタブには、ターミナルの下にパネルが付きます。
+このコンピューターのターミナルでは、この設定は要りません。場所は OS から読み取ります。
 
-- **入力欄**：Enter で送信、Shift+Enter で改行です（パネルの設定で Ctrl/⌘+Enter 送信に切り替えられます）。日本語の変換中の Enter では送信しません。入力欄の先頭で ↑ を押すと、前の指示を呼び出せます。下書きはマシンごとに残ります
-- **入力欄の下のボタン**（左から）
-  - **クリップ**：クリップボードの画像や、このコンピューターのファイルを接続先（`~/.cache/tsugite/attachments`）に送るか、接続先にあるファイルを選びます。どちらも入力欄に `@パス` が入ります。入力欄に画像を貼り付けても同じように送ります
-  - **/**：Claude Code のコマンド（`/resume`、`/compact`、`/context`、`/model`、`/effort`、`/status`、`/mcp`、`/config`、`/clear`、`/help`）
-  - **時計**：過去の会話を開く、このタブから送った指示と所要時間、入力の履歴
-  - **モデル**：モデルと effort を `/model` と `/effort` で切り替えます
-  - **盾**（右）：許可モード。押すと Shift+Tab と同じように切り替わります
-  - **送信**：処理中に送った指示は、待機中に戻るまでキューで待ちます。入力欄が空のときは中断（Esc）になります
-- **状態**（入力欄の上）：処理中・確認待ち・待機中と経過時間。サイドバーのマシン名の横にも出ます。確認待ちのときは **1 2 3 ↑ ↓ Enter** のキーを押せます。勝手に答えることはありません
-- **ターミナル側の入力欄は隠します**。Claude Code が質問しているときはまた表示し、隠していた場所をクリックするとターミナルに直接入力できます。パネルの設定（スライダーのボタン）でオフにできます
-- **通知**：ほかの画面を見ているあいだに処理が終わったり、確認待ちになったりすると知らせます
+**SSH 接続**：**SSH 接続** の見出しの **＋** から、Tailnet にないサーバーを追加します。
 
 ### 商標について
 
-Claude と Claude Code は Anthropic, PBC の商標、Tailscale は Tailscale Inc. の商標です。Tsugite は独立したプロジェクトで、両社とは提携しておらず、承認も受けていません。Tsugite には Claude Code は含まれていません。手元に入っている Claude Code を、利用者自身のアカウントで起動するだけで、利用には Anthropic の規約が適用されます。
+Tailscale は Tailscale Inc. の商標です。Tsugite は独立したプロジェクトで、Tailscale Inc. や Tabby の開発者とは提携しておらず、承認も受けていません。

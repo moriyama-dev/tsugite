@@ -1,7 +1,7 @@
 {
   "name": "tsugite",
   "productName": "Tsugite",
-  "description": "A terminal-first SSH client with Tailscale and Claude Code built in",
+  "description": "A terminal with Tailscale machines and a file explorer that follows your shell",
   "private": true,
   "repository": "https://github.com/moriyama-dev/tsugite",
   "homepage": "https://github.com/moriyama-dev/tsugite",
@@ -11,7 +11,7 @@
   },
   "license": "MIT",
   "main": "dist/main.js",
-  "version": "0.3.6",
+  "version": "0.4.0",
   "scripts": {
     "postinstall": "patch-package",
     "build": "webpack --progress --color --display-modules",

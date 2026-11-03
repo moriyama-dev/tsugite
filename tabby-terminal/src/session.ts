@@ -21,6 +21,9 @@ export abstract class BaseSession {
     protected destroyed = new Subject<void>()
     protected loginScriptProcessor: LoginScriptProcessor | null = null
     protected reportedCWD?: string
+    /** The machine the first OSC 7 report came from */
+    private reportedHost?: string
+    private cwdChanged = new Subject<string>()
     private initialDataBuffer: Buffer[] = []
     private initialDataBufferLength = 0
     private initialDataBufferTruncated = false
@@ -30,11 +33,20 @@ export abstract class BaseSession {
     get binaryOutput$ (): Observable<Buffer> { return this.binaryOutput }
     get closed$ (): Observable<void> { return this.closed }
     get destroyed$ (): Observable<void> { return this.destroyed }
+    /** Each folder the shell reports, usually once per prompt (repeated when it did not change) */
+    get cwdReported$ (): Observable<string> { return this.cwdChanged }
 
     constructor (protected logger: Logger) {
         this.middleware.push(this.oscProcessor)
         this.oscProcessor.cwdReported$.subscribe(cwd => {
             this.reportedCWD = cwd
+            this.cwdChanged.next(cwd)
+        })
+        this.oscProcessor.locationReported$.subscribe(({ host, path }) => {
+            if (this.acceptsReportedHost(host)) {
+                this.reportedCWD = path
+                this.cwdChanged.next(path)
+            }
         })
 
         this.middleware.outputToTerminal$.subscribe(data => {
@@ -56,6 +68,19 @@ export abstract class BaseSession {
         })
 
         this.middleware.outputToSession$.subscribe(data => this.write(data))
+    }
+
+    /**
+     * Whether an OSC 7 report from this host is about this session's machine. A shell started
+     * from this one on another machine (ssh from the shell) may report its own folder too.
+     * By default the first host to report is this machine.
+     */
+    protected acceptsReportedHost (host: string): boolean {
+        if (!host) {
+            return true
+        }
+        this.reportedHost ??= host
+        return host === this.reportedHost
     }
 
     feedFromTerminal (data: Buffer): void {

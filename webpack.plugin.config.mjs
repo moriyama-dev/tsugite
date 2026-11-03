@@ -120,6 +120,8 @@ export default options => {
                 { test: /\.css$/, use: ['@tabby-gang/to-string-loader', 'css-loader'], include: /component\.css/ },
                 { test: /\.css$/, use: ['style-loader', 'css-loader'], exclude: /component\.css/ },
                 { test: /\.yaml$/, use: ['yaml-loader'] },
+                // Shell scripts sent to remote machines as they are
+                { test: /\.(bash|zsh|fish)$/, type: 'asset/source' },
                 { test: /\.svg/, use: ['svg-inline-loader'] },
                 {
                     test: /\.(eot|otf|woff|woff2|ogg)(\?v=[0-9]\.[0-9]\.[0-9])?$/,

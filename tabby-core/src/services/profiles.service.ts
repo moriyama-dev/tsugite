@@ -28,7 +28,6 @@ export class ProfilesService {
         isTemplate: false,
         terminalColorScheme: null,
         behaviorOnSessionEnd: 'auto',
-        tsugiteAssist: null,
     }
 
     constructor (

@@ -2573,10 +2573,6 @@ msgid "id.port-forwarding.dynamic"
 msgstr "ダイナミック"
 
 #: Tsugite
-msgid "Claude Code is not installed on this machine. Install it now?"
-msgstr "このマシンには Claude Code が入っていません。今すぐ導入しますか？"
-
-#: Tsugite
 msgid "Authentication"
 msgstr "認証"
 
@@ -2605,18 +2601,6 @@ msgid "Choose…"
 msgstr "選択…"
 
 #: Tsugite
-msgid "Claude Code working folder"
-msgstr "Claude Code の作業フォルダ"
-
-#: Tsugite
-msgid "The folder Claude Code starts in. Leave empty for the home folder."
-msgstr "Claude Code を起動するフォルダです。空欄ならホームフォルダで起動します。"
-
-#: Tsugite
-msgid "Quotes, backslashes and $ cannot be used."
-msgstr "引用符、バックスラッシュ、$ は使えません。"
-
-#: Tsugite
 msgid "Refresh"
 msgstr "更新"
 
@@ -2641,14 +2625,6 @@ msgid "Open terminal"
 msgstr "ターミナルを開く"
 
 #: Tsugite
-msgid "Start Claude Code"
-msgstr "Claude Code を起動"
-
-#: Tsugite
-msgid "Show {count} offline machines"
-msgstr "オフラインの {count} 台を表示"
-
-#: Tsugite
 msgid "New SSH connection"
 msgstr "新しい SSH 接続"
 
@@ -2669,10 +2645,6 @@ msgid "Copy address"
 msgstr "アドレスをコピー"
 
 #: Tsugite
-msgid "Show offline machines"
-msgstr "オフラインのマシンを表示"
-
-#: Tsugite
 msgid "Default username…"
 msgstr "既定のユーザー名…"
 
@@ -2689,32 +2661,12 @@ msgid "Edit profile"
 msgstr "プロファイルを編集"
 
 #: Tsugite
-msgid "Add a snippet"
-msgstr "定型文を追加"
-
-#: Tsugite
-msgid "Change the model"
-msgstr "モデルを変更する"
-
-#: Tsugite
-msgid "Commands and settings"
-msgstr "コマンドと設定"
-
-#: Tsugite
 msgid "Commit"
 msgstr "コミット"
 
 #: Tsugite
 msgid "Continue"
 msgstr "続けて"
-
-#: Tsugite
-msgid "Do not change any code yet. First show a plan of what you will change and how."
-msgstr "まだコードは変えずに、何をどう変えるかの計画を先に示してください。"
-
-#: Tsugite
-msgid "Edit snippets"
-msgstr "定型文を編集"
 
 #: Tsugite
 msgid "Ended"
@@ -2725,200 +2677,36 @@ msgid "Enter"
 msgstr "Enter"
 
 #: Tsugite
-msgid "Enter to send, Shift+Enter for a new line"
-msgstr "Enter で送信、Shift+Enter で改行"
-
-#: Tsugite
-msgid "Finished"
-msgstr "完了しました"
-
-#: Tsugite
 msgid "History"
 msgstr "履歴"
-
-#: Tsugite
-msgid "No history yet"
-msgstr "履歴はまだありません"
-
-#: Tsugite
-msgid "Nothing sent yet"
-msgstr "まだ何も送っていません"
-
-#: Tsugite
-msgid "Notify when finished or waiting"
-msgstr "完了や確認待ちを通知する"
-
-#: Tsugite
-msgid "Open a past conversation"
-msgstr "過去の会話を開く"
-
-#: Tsugite
-msgid "Plan first"
-msgstr "計画を先に"
-
-#: Tsugite
-msgid "Please continue."
-msgstr "続けてください。"
-
-#: Tsugite
-msgid "Prompts sent from this tab"
-msgstr "このタブから送った指示"
-
-#: Tsugite
-msgid "Put back in the input to edit and send again"
-msgstr "入力欄に戻して、直してから送り直す"
 
 #: Tsugite
 msgid "Ready"
 msgstr "待機中"
 
 #: Tsugite
-msgid "Review the changes and commit them with a suitable message."
-msgstr "変更内容を確認して、適切なメッセージでコミットしてください。"
-
-#: Tsugite
-msgid "Run the tests"
-msgstr "テストを実行"
-
-#: Tsugite
-msgid "Run the tests and report the cause and a fix for any failure."
-msgstr "テストを実行して、失敗があれば原因と直し方を報告してください。"
-
-#: Tsugite
 msgid "Send"
 msgstr "送信"
-
-#: Tsugite
-msgid "Send now"
-msgstr "今すぐ送る"
-
-#: Tsugite
-msgid "Send with Enter"
-msgstr "Enter で送信する"
-
-#: Tsugite
-msgid "Send {command}?"
-msgstr "{command} を送りますか？"
-
-#: Tsugite
-msgid "Send {key}"
-msgstr "{key} を送る"
-
-#: Tsugite
-msgid "Sends the Esc key"
-msgstr "Esc キーを送ります"
-
-#: Tsugite
-msgid "Show help"
-msgstr "ヘルプを表示する"
-
-#: Tsugite
-msgid "Snippets"
-msgstr "定型文"
-
-#: Tsugite
-msgid "Snippets appear under the input. Clicking one inserts its text where the cursor is; nothing is sent until you press Send."
-msgstr "定型文は入力欄の下に並びます。クリックするとカーソルの位置に文が入ります。送信ボタンを押すまでは送られません。"
-
-#: Tsugite
-msgid "Start over with an empty conversation"
-msgstr "会話を空にしてやり直す"
-
-#: Tsugite
-msgid "Starting…"
-msgstr "起動中…"
 
 #: Tsugite
 msgid "Stop"
 msgstr "中断"
 
 #: Tsugite
-msgid "Summarize changes"
-msgstr "変更を要約"
-
-#: Tsugite
-msgid "Summarize the changes so far, briefly, file by file."
-msgstr "ここまでの変更点を、ファイルごとに短く要約してください。"
-
-#: Tsugite
-msgid "Summarize the conversation to free up context"
-msgstr "会話を要約して、文脈の空きを増やす"
-
-#: Tsugite
-msgid "Take back into the input"
-msgstr "入力欄に戻す"
-
-#: Tsugite
 msgid "Text"
 msgstr "本文"
-
-#: Tsugite
-msgid "This session"
-msgstr "このタブの記録"
-
-#: Tsugite
-msgid "Waiting for your answer"
-msgstr "確認待ち"
 
 #: Tsugite
 msgid "Working"
 msgstr "処理中"
 
 #: Tsugite
-msgid "Write instructions… ({hint})"
-msgstr "指示を入力…（{hint}）"
-
-#: Tsugite
-msgid "{mod}+Enter to send"
-msgstr "{mod}+Enter で送信"
-
-#: Tsugite
-msgid "Show the input"
-msgstr "入力欄を表示"
-
-#: Tsugite
-msgid "Hide the input"
-msgstr "入力欄を隠す"
-
-#: Tsugite
-msgid "Show how much context is used"
-msgstr "文脈の使用量を表示する"
-
-#: Tsugite
-msgid "Change the effort level"
-msgstr "effort を変更する"
-
-#: Tsugite
-msgid "Show the session status"
-msgstr "セッションの状態を表示する"
-
-#: Tsugite
-msgid "Manage MCP servers"
-msgstr "MCP サーバーを管理する"
-
-#: Tsugite
-msgid "Open the settings"
-msgstr "設定を開く"
-
-#: Tsugite
 msgid "Model"
 msgstr "モデル"
 
 #: Tsugite
-msgid "Effort"
-msgstr "effort"
-
-#: Tsugite
 msgid "Default"
 msgstr "既定"
-
-#: Tsugite
-msgid "Ask first"
-msgstr "毎回確認"
-
-#: Tsugite
-msgid "Accept edits"
-msgstr "編集は自動承認"
 
 #: Tsugite
 msgid "Plan"
@@ -2929,65 +2717,181 @@ msgid "Bypass"
 msgstr "確認なし"
 
 #: Tsugite
-msgid "Add files or images"
-msgstr "ファイルや画像を追加"
+msgid "Online"
+msgstr "オンライン"
 
 #: Tsugite
-msgid "Image on the clipboard"
-msgstr "クリップボードの画像"
+msgid "Offline"
+msgstr "オフライン"
 
 #: Tsugite
-msgid "Files on this computer…"
-msgstr "このコンピューターのファイル…"
+msgid "New group…"
+msgstr "新しいグループ…"
 
 #: Tsugite
-msgid "A file on the remote machine…"
-msgstr "接続先のファイル…"
+msgid "Rename group…"
+msgstr "グループ名を変更…"
 
 #: Tsugite
-msgid "You can also paste images into the input."
-msgstr "入力欄に画像を貼り付けることもできます。"
+msgid "Delete group"
+msgstr "グループを削除"
 
 #: Tsugite
-msgid "Conversations and history"
-msgstr "会話と履歴"
+msgid "Move to group"
+msgstr "グループに移動"
 
 #: Tsugite
-msgid "Model and effort"
-msgstr "モデルと effort"
+msgid "Remove from group"
+msgstr "グループから外す"
 
 #: Tsugite
-msgid "Switch the permission mode (Shift+Tab)"
-msgstr "許可モードを切り替える（Shift+Tab）"
+msgid "Name of the new group"
+msgstr "新しいグループの名前"
 
 #: Tsugite
-msgid "Stop (Esc)"
-msgstr "中断（Esc）"
+msgid "Name of the group"
+msgstr "グループの名前"
 
 #: Tsugite
-msgid "Queue until it is ready"
-msgstr "待機中になったら送る"
+msgid "Delete the group \"{name}\"?"
+msgstr "グループ「{name}」を削除しますか？"
 
 #: Tsugite
-msgid "Hide the input inside the terminal"
-msgstr "ターミナル側の入力欄を隠す"
+msgid "The machines in it are not deleted. They go back to Online and Offline."
+msgstr "中のマシンは削除されません。オンライン・オフラインの一覧に戻ります。"
 
 #: Tsugite
-msgid "There is no image on the clipboard"
-msgstr "クリップボードに画像がありません"
+msgid "Drag machines here"
+msgstr "ここにマシンをドラッグ"
 
 #: Tsugite
-msgid "Could not send the file"
-msgstr "ファイルを送れませんでした"
+msgid "Connections"
+msgstr "接続"
 
 #: Tsugite
-msgid "Could not list the files"
-msgstr "ファイルの一覧を取得できませんでした"
+msgid "Explorer"
+msgstr "エクスプローラー"
 
 #: Tsugite
-msgid "Refer to a file"
-msgstr "参照するファイル"
+msgid "New file…"
+msgstr "新しいファイル…"
 
 #: Tsugite
-msgid "The terminal's own input is hidden; click to type in the terminal"
-msgstr "ターミナル側の入力欄を隠しています。クリックするとターミナルに直接入力できます"
+msgid "New folder…"
+msgstr "新しいフォルダー…"
+
+#: Tsugite
+msgid "Collapse folders"
+msgstr "フォルダーを折りたたむ"
+
+#: Tsugite
+msgid "Open a terminal to see the files of the folder it is in."
+msgstr "ターミナルを開くと、その場所のファイルがここに表示されます。"
+
+#: Tsugite
+msgid "This terminal has no files to show."
+msgstr "このターミナルには表示できるファイルがありません。"
+
+#: Tsugite
+msgid "The shell has not said which folder it is in, so its home folder is shown. Reconnect to set it up, or see the README."
+msgstr "シェルから今いる場所が届いていないため、ホームフォルダーを表示しています。接続し直すと設定されます。詳しくは README を見てください。"
+
+#: Tsugite
+msgid "This folder is empty."
+msgstr "このフォルダーは空です。"
+
+#: Tsugite
+msgid "Could not open {name}"
+msgstr "{name} を開けませんでした"
+
+#: Tsugite
+msgid "\"{name}\" cannot be used as a name"
+msgstr "「{name}」は名前に使えません"
+
+#: Tsugite
+msgid "Could not save {name}"
+msgstr "{name} を保存できませんでした"
+
+#: Tsugite
+msgid "Move \"{name}\" to the trash?"
+msgstr "{name} をゴミ箱に移動しますか？"
+
+#: Tsugite
+msgid "The folder and everything in it are deleted on the server. This cannot be undone."
+msgstr "サーバー上のフォルダーと、その中身がすべて削除されます。元に戻せません。"
+
+#: Tsugite
+msgid "It is deleted on the server. This cannot be undone."
+msgstr "サーバー上から削除されます。元に戻せません。"
+
+#: Tsugite
+msgid "Move to trash"
+msgstr "ゴミ箱に移動"
+
+#: Tsugite
+msgid "Could not delete {name}"
+msgstr "{name} を削除できませんでした"
+
+#: Tsugite
+msgid "Open in terminal"
+msgstr "ターミナルでここに移動"
+
+#: Tsugite
+msgid "Open"
+msgstr "開く"
+
+#: Tsugite
+msgid "Reveal in Finder"
+msgstr "Finder で表示"
+
+#: Tsugite
+msgid "Show in file manager"
+msgstr "ファイルマネージャーで表示"
+
+#: Tsugite
+msgid "Copy path"
+msgstr "パスをコピー"
+
+#: Tsugite
+msgid "Rename…"
+msgstr "名前を変更…"
+
+#: Tsugite
+msgid "Size"
+msgstr "サイズ"
+
+#: Tsugite
+msgid "Permissions"
+msgstr "権限"
+
+#: Tsugite
+msgid "Modified"
+msgstr "更新日時"
+
+#: Tsugite
+msgid "Not connected"
+msgstr "接続していません"
+
+#: Tsugite
+msgid "{name} already exists"
+msgstr "{name} はすでにあります"
+
+#: Tsugite
+msgid "{name} is too big to open from here"
+msgstr "{name} は大きすぎるため、ここからは開けません"
+
+#: Tsugite
+msgid "Saved {name} on {machine}"
+msgstr "{name} を {machine} に保存しました"
+
+#: Tsugite
+msgid "Could not save {name} on {machine}"
+msgstr "{name} を {machine} に保存できませんでした"
+
+#: Tsugite
+msgid "Let the explorer follow the folder you are in"
+msgstr "エクスプローラーを今いる場所に追従させる"
+
+#: Tsugite
+msgid "On connecting, adds one line to ~/.bashrc or ~/.zshrc on the server (fish: a file in conf.d) so the shell reports its folder after each command. Turning this off does not remove what was added."
+msgstr "接続するときに、サーバーの ~/.bashrc か ~/.zshrc に1行を足します（fish は conf.d にファイルを置きます）。シェルがコマンドのたびに今いる場所を知らせるようになります。オフにしても、足したものは消えません。"

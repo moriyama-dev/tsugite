@@ -1,4 +1,5 @@
 import * as fs from 'mz/fs'
+import * as os from 'os'
 import { Injector } from '@angular/core'
 import { HostAppService, ConfigService, WIN_BUILD_BUNDLED_CONPTY_SUPPORTED, isWindowsBuild, Platform, BootstrapData, BOOTSTRAP_DATA, LogService } from 'tabby-core'
 import { BaseSession } from 'tabby-terminal'
@@ -222,6 +223,12 @@ export class Session extends BaseSession {
                 }, 500)
             })
         }
+    }
+
+    /** Only this computer: a report from a machine ssh'd into from this shell is about that machine */
+    protected acceptsReportedHost (host: string): boolean {
+        const name = (h: string) => h.toLowerCase().split('.')[0]
+        return !host || name(host) === 'localhost' || name(host) === name(os.hostname())
     }
 
     supportsWorkingDirectory (): boolean {

@@ -5,11 +5,34 @@ import { SessionMiddleware } from '../api/middleware'
 const OSCPrefix = Buffer.from('\x1b]')
 const OSCSuffixes = [Buffer.from('\x07'), Buffer.from('\x1b\\')]
 
+/** A folder reported by the shell with OSC 7, and the machine it is on */
+export interface ReportedLocation {
+    host: string
+    path: string
+}
+
+/** Parses the payload of OSC 7 (`file://host/path`, percent-encoded); null if it is not one */
+export function parseOSC7 (payload: string): ReportedLocation | null {
+    const match = /^file:\/\/([^/]*)(\/.*)$/.exec(payload)
+    if (!match) {
+        return null
+    }
+    let path = match[2]
+    try {
+        path = decodeURIComponent(path)
+    } catch {
+        // Not encoded by the shell; take it as it is
+    }
+    return { host: match[1], path }
+}
+
 export class OSCProcessor extends SessionMiddleware {
     get cwdReported$ (): Observable<string> { return this.cwdReported }
     get copyRequested$ (): Observable<string> { return this.copyRequested }
+    get locationReported$ (): Observable<ReportedLocation> { return this.locationReported }
 
     private cwdReported = new Subject<string>()
+    private locationReported = new Subject<ReportedLocation>()
     private buffer: Buffer | null = null
     private copyRequested = new Subject<string>()
 
@@ -74,6 +97,11 @@ export class OSCProcessor extends SessionMiddleware {
                 } else {
                     console.debug('Unsupported OSC 1337 parameter:', paramString)
                 }
+            } else if (oscCode === 7) {
+                const location = parseOSC7(oscParams.join(';'))
+                if (location) {
+                    this.locationReported.next(location)
+                }
             } else if (oscCode === 52) {
                 if (oscParams[0] === 'c' || oscParams[0] === '') {
                     const content = Buffer.from(oscParams[1], 'base64')
@@ -95,6 +123,7 @@ export class OSCProcessor extends SessionMiddleware {
 
     close (): void {
         this.cwdReported.complete()
+        this.locationReported.complete()
         this.copyRequested.complete()
         super.close()
     }

@@ -1,121 +1,162 @@
-.p-2.h-100.d-flex.flex-column
-    input.form-control.form-control-sm.mb-1(
-        type='text',
-        [(ngModel)]='filter',
-        [placeholder]='"Filter"|translate',
-        (ngModelChange)='onFilterChange()'
+.h-100.d-flex.flex-column
+    //- Connections, then the explorer, like the views of VS Code's side bar
+    .sidebar-view.connections(
+        [class.fill]='!connectionsCollapsed && explorerCollapsed',
+        [style.flex-basis.px]='!connectionsCollapsed && !explorerCollapsed ? connectionsHeight : null',
+        [class.folded]='connectionsCollapsed'
     )
-
-    .profile-tree.h-100
-        .d-flex.flex-column.p-2.profile-tree-container
-
-            //- Machines on the tailnet, read from the local tailscale CLI
-            a.tree-item(
-                (click)='toggleTailscaleCollapse()',
-                (contextmenu)='tailscaleContextMenu($event)',
-                href='#'
+        .view-header((click)='toggleConnections()')
+            i.fa.fa-fw.fas.text-muted.chevron([class.fa-chevron-right]='connectionsCollapsed', [class.fa-chevron-down]='!connectionsCollapsed')
+            span.view-title.me-auto(translate) Connections
+        .p-2.pt-1.d-flex.flex-column.view-content(*ngIf='!connectionsCollapsed')
+            input.form-control.form-control-sm.mb-1(
+                type='text',
+                [(ngModel)]='filter',
+                [placeholder]='"Filter"|translate',
+                (ngModelChange)='onFilterChange()'
             )
-                .fw-20
-                    .fa.fa-fw.fas.fa-chevron-right.ms-1.text-muted(*ngIf='tailscaleCollapsed')
-                    .fa.fa-fw.fas.fa-chevron-down.ms-1.text-muted(*ngIf='!tailscaleCollapsed')
-                .fw-20
-                    profile-icon.ms-1([icon]='"fas fa-network-wired"')
-                span.ms-2.me-auto Tailscale
 
-                .actions
-                    .action((click)='$event.stopPropagation(); refreshTailscale()', [title]='"Refresh"|translate')
-                        .fa.fa-fw.fas.fa-rotate
+            .profile-tree.h-100
+                .d-flex.flex-column.p-2.profile-tree-container
 
-            ng-container(*ngIf='!tailscaleCollapsed')
-                .tree-note(*ngIf='tailscaleState === "loading"', translate) Loading…
-                .tree-note(*ngIf='tailscaleState === "not-installed"', translate) Tailscale is not installed on this computer.
-                .tree-note(*ngIf='tailscaleState === "stopped"', translate) Tailscale is not connected.
-                .tree-note(*ngIf='tailscaleState === "error"') {{tailscaleError}}
-                .tree-note(*ngIf='tailscaleState === "ready" && !visibleMachines.length && !hiddenOfflineCount', translate) No machines
+                    //- Machines on the tailnet, read from the local tailscale CLI
+                    a.tree-item(
+                        (click)='toggleTailscaleCollapse()',
+                        (contextmenu)='tailscaleContextMenu($event)',
+                        (dragover)='onMachineDragOver("tailscale", $event)',
+                        (dragleave)='onMachineDragLeave("tailscale")',
+                        (drop)='onMachineDrop(null, $event)',
+                        [class.drop-target]='dropTarget === "tailscale"',
+                        href='#'
+                    )
+                        .fw-20
+                            .fa.fa-fw.fas.fa-chevron-right.ms-1.text-muted(*ngIf='tailscaleCollapsed')
+                            .fa.fa-fw.fas.fa-chevron-down.ms-1.text-muted(*ngIf='!tailscaleCollapsed')
+                        .fw-20
+                            profile-icon.ms-1([icon]='"fas fa-network-wired"')
+                        span.ms-2.me-auto Tailscale
 
-                a.tree-item(
-                    *ngFor='let machine of visibleMachines',
-                    [class.offline]='!machine.online',
-                    (dblclick)='openMachineTerminal(machine)',
-                    (contextmenu)='machineContextMenu(machine, $event)',
-                    [style.paddingLeft.px]='20',
-                    [title]='machine.dnsName',
-                    href='#'
-                )
-                    .fw-20
-                        i.fa.fa-fw.fas.fa-circle.status-dot.ms-1([class.online]='machine.online')
-                    span.ms-2.no-wrap {{ machine.name }}
-                    ng-container(*ngTemplateOutlet='assistBadge; context: {$implicit: assistStates.get(machine.name)}')
+                        .actions
+                            .action((click)='$event.stopPropagation(); newGroup()', [title]='"New group…"|translate')
+                                .fa.fa-fw.fas.fa-folder-plus
+                            .action((click)='$event.stopPropagation(); refreshTailscale()', [title]='"Refresh"|translate')
+                                .fa.fa-fw.fas.fa-rotate
 
-                    .actions
-                        .action((click)='openMachineTerminal(machine)', [title]='"Open terminal"|translate')
-                            .fa.fa-fw.fas.fa-terminal
-                        .action((click)='openMachineClaude(machine)', [title]='"Start Claude Code"|translate')
-                            .fa.fa-fw.fas.fa-wand-magic-sparkles
-                        .action((click)='editMachine(machine)', [title]='"Settings"|translate')
-                            .fa.fa-fw.fas.fa-gear
+                    ng-container(*ngIf='!tailscaleCollapsed')
+                        .tree-note(*ngIf='tailscaleState === "loading"', translate) Loading…
+                        .tree-note(*ngIf='tailscaleState === "not-installed"', translate) Tailscale is not installed on this computer.
+                        .tree-note(*ngIf='tailscaleState === "stopped"', translate) Tailscale is not connected.
+                        .tree-note(*ngIf='tailscaleState === "error"') {{tailscaleError}}
+                        .tree-note(*ngIf='tailscaleState === "ready" && !machineSections.length', translate) No machines
 
-                a.tree-note.tree-note-link(
-                    *ngIf='hiddenOfflineCount',
-                    (click)='toggleShowOffline()',
-                    href='#',
-                    translate='Show {count} offline machines',
-                    [translateParams]='{count: hiddenOfflineCount}'
-                )
+                        ng-container(*ngFor='let section of machineSections; trackBy: trackSection')
+                            //- A group of the user's, or the online / offline machines in no group
+                            a.tree-item.machine-section(
+                                (click)='toggleSection(section)',
+                                (contextmenu)='sectionContextMenu(section, $event)',
+                                (dragover)='onMachineDragOver(section.key, $event)',
+                                (dragleave)='onMachineDragLeave(section.key)',
+                                (drop)='onMachineDrop(section.groupId, $event)',
+                                [class.drop-target]='dropTarget === section.key',
+                                [style.paddingLeft.px]='20',
+                                href='#'
+                            )
+                                .fw-20
+                                    .fa.fa-fw.fas.fa-chevron-right.ms-1.text-muted(*ngIf='isSectionCollapsed(section)')
+                                    .fa.fa-fw.fas.fa-chevron-down.ms-1.text-muted(*ngIf='!isSectionCollapsed(section)')
+                                .fw-20
+                                    i.fa.fa-fw.ms-1.section-icon(
+                                        [class.far]='section.kind !== "online"',
+                                        [class.fas]='section.kind === "online"',
+                                        [class.fa-folder]='section.kind === "group" && isSectionCollapsed(section)',
+                                        [class.fa-folder-open]='section.kind === "group" && !isSectionCollapsed(section)',
+                                        [class.fa-circle]='section.kind !== "group"',
+                                        [class.online]='section.kind === "online"'
+                                    )
+                                span.ms-2.me-auto.no-wrap {{ section.name }}
+                                span.section-count.ms-2 {{ section.machines.length }}
 
-            ng-container(*ngFor='let group of rootGroups')
-                ng-container(*ngTemplateOutlet='recursiveGroup; context: {$implicit: group, depth: 0}')
+                            ng-container(*ngIf='!isSectionCollapsed(section)')
+                                .tree-note.tree-note-nested(*ngIf='!section.machines.length', translate) Drag machines here
+                                a.tree-item(
+                                    *ngFor='let machine of section.machines; trackBy: trackMachine',
+                                    [class.offline]='!machine.online',
+                                    draggable='true',
+                                    (dragstart)='onMachineDragStart(machine, $event)',
+                                    (dragend)='dropTarget = null',
+                                    (dblclick)='openMachineTerminal(machine)',
+                                    (contextmenu)='machineContextMenu(machine, $event)',
+                                    [style.paddingLeft.px]='40',
+                                    [title]='machine.dnsName',
+                                    href='#'
+                                )
+                                    .fw-20
+                                        i.fa.fa-fw.fas.fa-circle.status-dot.ms-1([class.online]='machine.online')
+                                    span.ms-2.no-wrap {{ machine.name }}
 
-            ng-template(#recursiveGroup let-group let-depth='depth')
-                a.tree-item(
-                    (click)='toggleGroupCollapse(group)',
-                    [style.paddingLeft.px]='depth * 20',
-                    (contextmenu)='groupContextMenu(group, $event)',
-                    href='#'
-                )
-                    .fw-20
-                        .fa.fa-fw.fas.fa-chevron-right.ms-1.text-muted(*ngIf='group.collapsed')
-                        .fa.fa-fw.fas.fa-chevron-down.ms-1.text-muted(*ngIf='!group.collapsed')
-                    .fw-20
-                        profile-icon.ms-1([icon]='group.icon ?? "far fa-folder"', [color]='group?.color')
-                    span.ms-2.me-auto {{ group.name || ("Ungrouped"|translate) }}
+                                    .actions
+                                        .action((click)='openMachineTerminal(machine)', [title]='"Open terminal"|translate')
+                                            .fa.fa-fw.fas.fa-terminal
+                                        .action((click)='editMachine(machine)', [title]='"Settings"|translate')
+                                            .fa.fa-fw.fas.fa-gear
 
-                    .actions(*ngIf='group.id === "ungrouped"')
-                        .action((click)='$event.stopPropagation(); newSSHConnection()', [title]='"New SSH connection"|translate')
-                            .fa.fa-fw.fas.fa-plus
+                    ng-container(*ngFor='let group of rootGroups')
+                        ng-container(*ngTemplateOutlet='recursiveGroup; context: {$implicit: group, depth: 0}')
 
-                ng-container(*ngIf='!group.collapsed')
-                    a.tree-note.tree-note-link(
-                        *ngIf='group.id === "ungrouped" && !group.profiles?.length',
-                        (click)='newSSHConnection()',
-                        href='#',
-                        translate
-                    ) Add an SSH connection
-                    ng-container(*ngFor='let profile of group.profiles')
+                    ng-template(#recursiveGroup let-group let-depth='depth')
                         a.tree-item(
-                            (dblclick)='launchProfile(profile)',
-                            [style.paddingLeft.px]='(depth + 1) * 20',
-                            (contextmenu)='profileContextMenu(profile, $event)',
+                            (click)='toggleGroupCollapse(group)',
+                            [style.paddingLeft.px]='depth * 20',
+                            (contextmenu)='groupContextMenu(group, $event)',
                             href='#'
                         )
                             .fw-20
-                                profile-icon.ms-1([icon]='profile.icon', [color]='profile.color')
-                            span.ms-2.no-wrap {{ profile.name }}
-                            ng-container(*ngTemplateOutlet='assistBadge; context: {$implicit: assistStates.get(profile.name)}')
+                                .fa.fa-fw.fas.fa-chevron-right.ms-1.text-muted(*ngIf='group.collapsed')
+                                .fa.fa-fw.fas.fa-chevron-down.ms-1.text-muted(*ngIf='!group.collapsed')
+                            .fw-20
+                                profile-icon.ms-1([icon]='group.icon ?? "far fa-folder"', [color]='group?.color')
+                            span.ms-2.me-auto {{ group.name || ("Ungrouped"|translate) }}
 
-                            .actions
-                                .action((click)='launchProfile(profile)', [title]='"Open terminal"|translate')
-                                    .fa.fa-fw.fas.fa-play
-                                .action(*ngIf='profile.type === "ssh"', (click)='launchClaude(profile)', [title]='"Start Claude Code"|translate')
-                                    .fa.fa-fw.fas.fa-wand-magic-sparkles
+                            .actions(*ngIf='group.id === "ungrouped"')
+                                .action((click)='$event.stopPropagation(); newSSHConnection()', [title]='"New SSH connection"|translate')
+                                    .fa.fa-fw.fas.fa-plus
 
-                    ng-container(*ngFor='let child of group.children')
-                        ng-container(*ngTemplateOutlet='recursiveGroup; context: {$implicit: child, depth: depth + 1}')
+                        ng-container(*ngIf='!group.collapsed')
+                            a.tree-note.tree-note-link(
+                                *ngIf='group.id === "ungrouped" && !group.profiles?.length',
+                                (click)='newSSHConnection()',
+                                href='#',
+                                translate
+                            ) Add an SSH connection
+                            ng-container(*ngFor='let profile of group.profiles')
+                                a.tree-item(
+                                    (dblclick)='launchProfile(profile)',
+                                    [style.paddingLeft.px]='(depth + 1) * 20',
+                                    (contextmenu)='profileContextMenu(profile, $event)',
+                                    href='#'
+                                )
+                                    .fw-20
+                                        profile-icon.ms-1([icon]='profile.icon', [color]='profile.color')
+                                    span.ms-2.no-wrap {{ profile.name }}
+
+                                    .actions
+                                        .action((click)='launchProfile(profile)', [title]='"Open terminal"|translate')
+                                            .fa.fa-fw.fas.fa-play
+
+                            ng-container(*ngFor='let child of group.children')
+                                ng-container(*ngTemplateOutlet='recursiveGroup; context: {$implicit: child, depth: depth + 1}')
+
+    .sidebar-splitter(
+        *ngIf='!connectionsCollapsed && !explorerCollapsed',
+        (mousedown)='startSplitResize($event)'
+    )
+
+    file-explorer.sidebar-view(
+        [class.fill]='!explorerCollapsed',
+        [(collapsed)]='explorerCollapsed',
+        (collapsedChange)='saveExplorerCollapsed()'
+    )
+
 .grabber(
     (mousedown)="startResize($event)"
 )
-
-//- Shows when an assisted tab on the machine is working or waiting for an answer
-ng-template(#assistBadge let-state)
-    i.assist-badge.fas.fa-circle-notch.fa-spin.ms-2(*ngIf='state === "working"', [title]='"Working"|translate')
-    i.assist-badge.waiting.fas.fa-hand.ms-2(*ngIf='state === "waiting"', [title]='"Waiting for your answer"|translate')

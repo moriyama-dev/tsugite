@@ -67,20 +67,21 @@ linux:
   category: "Utility;TerminalEmulator;Network"
   icon: "./build/icons"
   artifactName: tsugite-${version}-linux-${env.ARCH}.${ext}
-  synopsis: Terminal-first SSH client with Tailscale and Claude Code
+  synopsis: Terminal with Tailscale machines and a file explorer that follows your shell
   description: |
-    Tsugite is a terminal-first SSH client. It lists the machines on your Tailscale
-    network, opens a terminal on any of them with one click and can start Claude Code
-    there in the folder you choose. Saved SSH connections work the same way.
+    Tsugite is a terminal for local shells and SSH. It lists the machines on your
+    Tailscale network, opens a terminal on any of them with a double-click, and shows
+    the folder each terminal is in, on this computer or on the server, in an explorer
+    where files can be opened, created, renamed and deleted.
   executableArgs:
   - "--no-sandbox"
   desktop:
     entry:
       StartupWMClass: Tsugite
       MimeType: x-scheme-handler/tsugite
-      Comment: Terminal-first SSH client with Tailscale and Claude Code
-      Comment[ja]: Tailscale と Claude Code が使える、ターミナルが主役の SSH クライアント
-      Keywords: ssh;terminal;tailscale;claude;
+      Comment: Terminal with Tailscale machines and a file explorer that follows your shell
+      Comment[ja]: Tailscale のマシン一覧と、今いる場所を表示するエクスプローラーがあるターミナル
+      Keywords: ssh;terminal;tailscale;sftp;explorer;
 deb:
   packageName: tsugite
   depends:

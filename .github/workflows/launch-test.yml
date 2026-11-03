@@ -1,0 +1,100 @@
+name: Launch test
+
+# Builds the app and launches it on GitHub's own runners, before a release is tagged.
+# Run by hand only; it uses no secrets and can only read the repository.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  macos:
+    runs-on: macos-15
+    timeout-minutes: 60
+    env:
+      ARCH: arm64
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+
+      - name: Install packages
+        run: |
+          npm install -g yarn
+          yarn --network-timeout 1000000
+
+      - name: Unit tests
+        run: |
+          yarn test:unit
+          yarn test:ssh-term
+
+      - name: Webpack
+        run: yarn run build
+
+      - name: Prepackage plugins
+        run: node scripts/prepackage-plugins.mjs
+
+      # electron-builder looks for Electron next to the app's own modules
+      - run: ln -s ../../node_modules/electron app/node_modules
+
+      - name: Build the app
+        run: node scripts/build-macos.mjs
+        env:
+          USE_HARD_LINKS: false
+
+      - name: Verify the signature
+        run: codesign --verify --deep --strict --verbose=2 dist/mac*/Tsugite.app
+
+      # The public standalone Tailscale app, never signed in, as in release.yml
+      - name: Install the Tailscale app
+        continue-on-error: true
+        env:
+          TAILSCALE_VERSION: 1.104.2
+        run: |
+          curl -fsSL -o "${RUNNER_TEMP}/tailscale.zip" "https://pkgs.tailscale.com/stable/Tailscale-${TAILSCALE_VERSION}-macos.zip"
+          ditto -x -k "${RUNNER_TEMP}/tailscale.zip" "${RUNNER_TEMP}/tailscale"
+          APP="$( find "${RUNNER_TEMP}/tailscale" -maxdepth 2 -name Tailscale.app | head -n 1 )"
+          sudo ditto "${APP}" /Applications/Tailscale.app
+
+      - name: Launch the app
+        run: node scripts/launch-test.mjs dist/mac*/Tsugite.app/Contents/MacOS/Tsugite
+
+  linux:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y libfontconfig1-dev libsecret-1-dev
+          npm install -g yarn
+
+      - name: Install packages
+        run: yarn --network-timeout 1000000
+
+      - name: Webpack
+        run: yarn run build
+
+      - name: Prepackage plugins
+        run: node scripts/prepackage-plugins.mjs
+
+      - name: Build the app
+        run: node scripts/build-linux.mjs
+        env:
+          USE_HARD_LINKS: false
+
+      - name: Launch the app
+        run: xvfb-run -a node scripts/launch-test.mjs dist/linux-unpacked/tsugite

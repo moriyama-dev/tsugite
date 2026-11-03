@@ -3,7 +3,7 @@ import { marker as _ } from '@biesbjerg/ngx-translate-extract-marker'
 import colors from 'ansi-colors'
 import { Component, Injector } from '@angular/core'
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap'
-import { GetRecoveryTokenOptions, Platform, ProfilesService, RecoveryToken } from 'tabby-core'
+import { ExplorerFileSystem, GetRecoveryTokenOptions, Platform, ProfilesService, RecoveryToken } from 'tabby-core'
 import { BaseTerminalTabComponent, ConnectableTerminalTabComponent } from 'tabby-terminal'
 import { SSHService } from '../services/ssh.service'
 import { KeyboardInteractivePrompt, SSHSession } from '../session/ssh'
@@ -11,6 +11,7 @@ import { SSHPortForwardingModalComponent } from './sshPortForwardingModal.compon
 import { SSHProfile } from '../api'
 import { SSHShellSession } from '../session/shell'
 import { SSHMultiplexerService } from '../services/sshMultiplexer.service'
+import { SFTPExplorerFileSystem } from '../explorerFileSystem'
 
 /** @hidden */
 @Component({
@@ -182,12 +183,16 @@ export class SSHTabComponent extends ConnectableTerminalTabComponent<SSHProfile>
         }
     }
 
-    getRemoteExec (): ((command: string, input?: Buffer) => Promise<string>) | null {
-        const session = this.sshSession
-        if (!session?.open) {
-            return null
-        }
-        return (command, input) => session.exec(command, input)
+    protected createExplorerFileSystem (): ExplorerFileSystem {
+        return new SFTPExplorerFileSystem(() => this.sshSession, this.profile.name, this.platform, this.notifications, this.translate)
+    }
+
+    /** The home folder, where the shell starts */
+    protected async getExplorerFallbackDirectory (): Promise<string | null> {
+        const home = await this.sshSession?.exec('pwd').catch(() => null)
+        // An empty answer means it is not known
+        // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
+        return home?.trim().split('\n').pop() || null
     }
 
     async getRecoveryToken (options?: GetRecoveryTokenOptions): Promise<RecoveryToken> {

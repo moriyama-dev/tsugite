@@ -1,4 +1,4 @@
-import { Component, HostBinding, HostListener, Input } from '@angular/core'
+import { Component, ElementRef, HostBinding, HostListener, Input } from '@angular/core'
 import { TranslateService } from '@ngx-translate/core'
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap'
 import deepClone from 'clone-deep'
@@ -11,11 +11,21 @@ import { PlatformService } from '../api/platform'
 import { ProfileProvider } from '../api/index'
 import { PartialProfileGroup, ProfileGroup, PartialProfile, Profile } from '../index'
 import { TailscaleService, TailscaleMachine, TailscaleState } from '../services/tailscale.service'
-import { ClaudeLauncherService } from '../services/claudeLauncher.service'
-import { AssistActivityService, AssistState } from '../services/assistActivity.service'
 import { BaseComponent } from './base.component'
 import { TailscaleMachineModalComponent } from './tailscaleMachineModal.component'
 import { PromptModalComponent } from './promptModal.component'
+
+/** One collapsible list under Tailscale: a group of the user's, or the online or offline machines in no group */
+export interface MachineSection {
+    /** Key the collapsed state is saved under */
+    key: string
+    kind: 'group' | 'online' | 'offline'
+    groupId: string | null
+    name: string
+    machines: TailscaleMachine[]
+}
+
+const MACHINE_DRAG_TYPE = 'application/x-tsugite-machine'
 
 interface CollapsableProfileGroup extends ProfileGroup {
     collapsed: boolean
@@ -35,14 +45,21 @@ export class ProfileTreeComponent extends BaseComponent {
     filteredProfiles: PartialProfile<Profile>[] = []
     @Input() filter = ''
 
-    /** What the assistant is doing in tabs opened on each machine or connection, by name */
-    assistStates = new Map<string, AssistState | null>()
     machines: TailscaleMachine[] = []
-    visibleMachines: TailscaleMachine[] = []
-    hiddenOfflineCount = 0
+    machineSections: MachineSection[] = []
     tailscaleState: TailscaleState = 'loading'
     tailscaleCollapsed = window.localStorage.tailscaleCollapsed === 'true'
+    /** Section key -> collapsed; offline machines start collapsed */
+    private sectionCollapsed: Record<string, boolean> = ProfileTreeComponent.loadSectionCollapsed()
+    /** Section key under the machine being dragged, or "tailscale" for the header */
+    dropTarget: string | null = null
 
+
+    connectionsCollapsed = window.localStorage.connectionsCollapsed === 'true'
+    explorerCollapsed = window.localStorage.explorerCollapsed === 'true'
+    /** Height of the connections view while the explorer is open below it */
+    connectionsHeight = parseInt(window.localStorage.connectionsHeight ?? '0') || Math.round(window.innerHeight * 0.45)
+    private splitResizing: { startY: number, startHeight: number } | null = null
 
     panelMinWidth = 200
     panelMaxWidth = 600
@@ -59,8 +76,7 @@ export class ProfileTreeComponent extends BaseComponent {
         private translate: TranslateService,
         private ngbModal: NgbModal,
         private tailscale: TailscaleService,
-        private claude: ClaudeLauncherService,
-        private assistActivity: AssistActivityService,
+        private element: ElementRef<HTMLElement>,
     ) {
         super()
     }
@@ -77,19 +93,15 @@ export class ProfileTreeComponent extends BaseComponent {
     async ngOnInit (): Promise<void> {
         this.subscribeUntilDestroyed(this.tailscale.machines$, machines => {
             this.machines = machines
-            this.updateVisibleMachines()
+            this.updateMachineSections()
         })
         this.subscribeUntilDestroyed(this.tailscale.state$, state => this.tailscaleState = state)
         this.tailscale.start()
-        this.subscribeUntilDestroyed(this.assistActivity.changed$, () => this.assistStates = new Map(
-            [...this.machines.map(m => m.name), ...this.profileGroups.flatMap(g => g.profiles ?? []).map(p => p.name)]
-                .map(name => [name, this.assistActivity.get(name)]),
-        ))
 
         await this.loadTreeItems()
         this.subscribeUntilDestroyed(this.config.changed$, () => {
             this.loadTreeItems()
-            this.updateVisibleMachines()
+            this.updateMachineSections()
         })
         this.app.tabsChanged$.subscribe(() => this.tabStateChanged())
         this.app.activeTabChange$.subscribe(() => this.tabStateChanged())
@@ -239,11 +251,6 @@ export class ProfileTreeComponent extends BaseComponent {
                 label: this.translate.instant('Run'),
                 click: () => this.launchProfile(profile),
             },
-            ...profile.type === 'ssh' ? [{
-                type: 'normal' as const,
-                label: this.translate.instant('Start Claude Code'),
-                click: () => this.launchClaude(profile),
-            }] : [],
             {
                 type: 'normal',
                 label: this.translate.instant('Edit profile'),
@@ -302,10 +309,6 @@ export class ProfileTreeComponent extends BaseComponent {
         return this.profilesService.launchProfile(profile)
     }
 
-    async launchClaude (profile: PartialProfile<Profile>): Promise<void> {
-        await this.claude.openClaude(profile)
-    }
-
     ////// TAILSCALE //////
     refreshTailscale (): void {
         this.tailscale.refresh()
@@ -316,24 +319,186 @@ export class ProfileTreeComponent extends BaseComponent {
         window.localStorage.tailscaleCollapsed = String(this.tailscaleCollapsed)
     }
 
-    async toggleShowOffline (): Promise<void> {
-        this.config.store.tsugite.showOffline = !this.config.store.tsugite.showOffline
-        await this.config.save()
+    get filtering (): boolean {
+        return !!this.filter.trim()
     }
 
-    private updateVisibleMachines (): void {
+    private updateMachineSections (): void {
         const q = this.filter.trim().toLowerCase()
         const matching = this.machines.filter(m => !q || m.name.toLowerCase().includes(q) || m.dnsName.toLowerCase().includes(q))
-        this.visibleMachines = this.config.store.tsugite.showOffline ? matching : matching.filter(m => m.online)
-        this.hiddenOfflineCount = matching.length - this.visibleMachines.length
+        const byGroup = new Map<string, TailscaleMachine[]>()
+        const ungrouped: TailscaleMachine[] = []
+        for (const machine of matching) {
+            const id = this.tailscale.getGroupId(machine)
+            if (id) {
+                byGroup.set(id, [...byGroup.get(id) ?? [], machine])
+            } else {
+                ungrouped.push(machine)
+            }
+        }
+        const sections: MachineSection[] = this.tailscale.getGroups()
+            .map(group => ({
+                key: `group:${group.id}`,
+                kind: 'group' as const,
+                groupId: group.id,
+                name: group.name,
+                // The machines arrive sorted online first, then by name
+                machines: byGroup.get(group.id) ?? [],
+            }))
+            // While filtering, only the groups with a match
+            .filter(section => !q || section.machines.length)
+        const online = ungrouped.filter(m => m.online)
+        const offline = ungrouped.filter(m => !m.online)
+        if (online.length) {
+            sections.push({ key: 'online', kind: 'online', groupId: null, name: this.translate.instant('Online'), machines: online })
+        }
+        if (offline.length) {
+            sections.push({ key: 'offline', kind: 'offline', groupId: null, name: this.translate.instant('Offline'), machines: offline })
+        }
+        this.machineSections = sections
+    }
+
+    // The lists are rebuilt on every refresh; keeping their elements keeps a drag going
+    trackSection (_index: number, section: MachineSection): string {
+        return section.key
+    }
+
+    trackMachine (_index: number, machine: TailscaleMachine): string {
+        return machine.name
+    }
+
+    isSectionCollapsed (section: MachineSection): boolean {
+        // A filter shows every match
+        if (this.filtering) {
+            return false
+        }
+        return this.sectionCollapsed[section.key] ?? section.kind === 'offline'
+    }
+
+    toggleSection (section: MachineSection): void {
+        this.sectionCollapsed[section.key] = !this.isSectionCollapsed(section)
+        window.localStorage.tailscaleSectionCollapsed = JSON.stringify(this.sectionCollapsed)
+    }
+
+    private static loadSectionCollapsed (): Record<string, boolean> {
+        try {
+            return JSON.parse(window.localStorage.tailscaleSectionCollapsed ?? '{}') ?? {}
+        } catch {
+            return {}
+        }
     }
 
     async openMachineTerminal (machine: TailscaleMachine): Promise<void> {
-        await this.claude.openTerminal(this.tailscale.toProfile(machine))
+        await this.profilesService.openNewTabForProfile(this.tailscale.toProfile(machine))
     }
 
-    async openMachineClaude (machine: TailscaleMachine): Promise<void> {
-        await this.claude.openClaude(this.tailscale.toProfile(machine))
+    ////// TAILSCALE GROUPS //////
+    async newGroup (machine?: TailscaleMachine): Promise<void> {
+        const name = await this.askName(this.translate.instant('Name of the new group'), '')
+        if (!name) {
+            return
+        }
+        const group = await this.tailscale.createGroup(name)
+        if (machine) {
+            await this.tailscale.setGroup(machine, group.id)
+        }
+        // A new group opens, so the machine just put into it stays in view
+        this.sectionCollapsed[`group:${group.id}`] = false
+        window.localStorage.tailscaleSectionCollapsed = JSON.stringify(this.sectionCollapsed)
+    }
+
+    private async renameGroup (section: MachineSection): Promise<void> {
+        const name = await this.askName(this.translate.instant('Name of the group'), section.name)
+        if (name && section.groupId) {
+            await this.tailscale.renameGroup(section.groupId, name)
+        }
+    }
+
+    private async deleteGroup (section: MachineSection): Promise<void> {
+        if (!section.groupId) {
+            return
+        }
+        if ((await this.platform.showMessageBox({
+            type: 'warning',
+            message: this.translate.instant('Delete the group "{name}"?', section),
+            detail: this.translate.instant('The machines in it are not deleted. They go back to Online and Offline.'),
+            buttons: [this.translate.instant('Delete'), this.translate.instant('Keep')],
+            defaultId: 1,
+            cancelId: 1,
+        })).response === 0) {
+            await this.tailscale.deleteGroup(section.groupId)
+        }
+    }
+
+    private async askName (prompt: string, value: string): Promise<string | null> {
+        const modal = this.ngbModal.open(PromptModalComponent)
+        modal.componentInstance.prompt = prompt
+        modal.componentInstance.value = value
+        const result = await modal.result.catch(() => null)
+        return result?.value?.trim() || null
+    }
+
+    sectionContextMenu (section: MachineSection, event: MouseEvent): void {
+        event.preventDefault()
+        event.stopPropagation()
+        this.platform.popupContextMenu([
+            {
+                type: 'normal',
+                label: this.isSectionCollapsed(section) ? this.translate.instant('Expand group') : this.translate.instant('Collapse group'),
+                click: () => this.toggleSection(section),
+            },
+            { type: 'separator' },
+            {
+                type: 'normal',
+                label: this.translate.instant('New group…'),
+                click: () => this.newGroup(),
+            },
+            ...section.kind === 'group' ? [
+                {
+                    type: 'normal' as const,
+                    label: this.translate.instant('Rename group…'),
+                    click: () => this.renameGroup(section),
+                },
+                {
+                    type: 'normal' as const,
+                    label: this.translate.instant('Delete group'),
+                    click: () => this.deleteGroup(section),
+                },
+            ] : [],
+        ])
+    }
+
+    onMachineDragStart (machine: TailscaleMachine, event: DragEvent): void {
+        event.dataTransfer?.setData(MACHINE_DRAG_TYPE, machine.name)
+        event.dataTransfer!.effectAllowed = 'move'
+    }
+
+    /** Machines can be dropped on a group, or on Online, Offline or the Tailscale header to leave their group */
+    onMachineDragOver (target: string, event: DragEvent): void {
+        if (!event.dataTransfer?.types.includes(MACHINE_DRAG_TYPE)) {
+            return
+        }
+        event.preventDefault()
+        event.dataTransfer.dropEffect = 'move'
+        this.dropTarget = target
+    }
+
+    onMachineDragLeave (target: string): void {
+        if (this.dropTarget === target) {
+            this.dropTarget = null
+        }
+    }
+
+    async onMachineDrop (groupId: string | null, event: DragEvent): Promise<void> {
+        this.dropTarget = null
+        const name = event.dataTransfer?.getData(MACHINE_DRAG_TYPE)
+        const machine = this.machines.find(m => m.name === name)
+        if (!machine) {
+            return
+        }
+        event.preventDefault()
+        event.stopPropagation()
+        await this.tailscale.setGroup(machine, groupId)
     }
 
     async editMachine (machine: TailscaleMachine): Promise<void> {
@@ -364,9 +529,28 @@ export class ProfileTreeComponent extends BaseComponent {
                 click: () => this.openMachineTerminal(machine),
             },
             {
-                type: 'normal',
-                label: this.translate.instant('Start Claude Code'),
-                click: () => this.openMachineClaude(machine),
+                type: 'submenu',
+                label: this.translate.instant('Move to group'),
+                submenu: [
+                    ...this.tailscale.getGroups().map(group => ({
+                        type: 'radio' as const,
+                        label: group.name,
+                        checked: this.tailscale.getGroupId(machine) === group.id,
+                        click: () => this.tailscale.setGroup(machine, group.id),
+                    })),
+                    ...this.tailscale.getGroups().length ? [{ type: 'separator' as const }] : [],
+                    {
+                        type: 'normal',
+                        label: this.translate.instant('New group…'),
+                        click: () => this.newGroup(machine),
+                    },
+                    {
+                        type: 'normal',
+                        label: this.translate.instant('Remove from group'),
+                        enabled: !!this.tailscale.getGroupId(machine),
+                        click: () => this.tailscale.setGroup(machine, null),
+                    },
+                ],
             },
             { type: 'separator' },
             {
@@ -396,10 +580,9 @@ export class ProfileTreeComponent extends BaseComponent {
                 click: () => this.refreshTailscale(),
             },
             {
-                type: 'checkbox',
-                label: this.translate.instant('Show offline machines'),
-                checked: this.config.store.tsugite.showOffline,
-                click: () => this.toggleShowOffline(),
+                type: 'normal',
+                label: this.translate.instant('New group…'),
+                click: () => this.newGroup(),
             },
             {
                 type: 'normal',
@@ -421,7 +604,7 @@ export class ProfileTreeComponent extends BaseComponent {
     }
 
     async onFilterChange (): Promise<void> {
-        this.updateVisibleMachines()
+        this.updateMachineSections()
         try {
             const q = this.filter.trim().toLowerCase()
 
@@ -455,6 +638,21 @@ export class ProfileTreeComponent extends BaseComponent {
         }
     }
 
+    ////// VIEWS //////
+    toggleConnections (): void {
+        this.connectionsCollapsed = !this.connectionsCollapsed
+        window.localStorage.connectionsCollapsed = String(this.connectionsCollapsed)
+    }
+
+    saveExplorerCollapsed (): void {
+        window.localStorage.explorerCollapsed = String(this.explorerCollapsed)
+    }
+
+    startSplitResize (event: MouseEvent): void {
+        this.splitResizing = { startY: event.clientY, startHeight: this.connectionsHeight }
+        event.preventDefault()
+    }
+
     ////// RESIZING //////
     startResize (event: MouseEvent): void {
         this.panelIsResizing = true
@@ -465,6 +663,13 @@ export class ProfileTreeComponent extends BaseComponent {
 
     @HostListener('document:mousemove', ['$event'])
     onMouseMove (event: MouseEvent): void {
+        if (this.splitResizing) {
+            // Both views keep at least their header and a few rows
+            const max = this.element.nativeElement.clientHeight - 120
+            this.connectionsHeight = Math.round(Math.min(Math.max(80, this.splitResizing.startHeight + event.clientY - this.splitResizing.startY), Math.max(80, max)))
+            window.localStorage.connectionsHeight = String(this.connectionsHeight)
+            return
+        }
         if (!this.panelIsResizing) { return }
         const delta = event.clientX - this.panelStartX
         const width = Math.min(Math.max(this.panelMinWidth, this.panelStartWidth + delta), this.panelMaxWidth)
@@ -475,6 +680,7 @@ export class ProfileTreeComponent extends BaseComponent {
     @HostListener('document:mouseup')
     stopResize (): boolean {
         this.panelIsResizing = false
+        this.splitResizing = null
         return true
     }
 

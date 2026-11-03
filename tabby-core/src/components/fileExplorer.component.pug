@@ -1,0 +1,74 @@
+//- The view header, as in VS Code's side bar: click to fold, buttons on hover
+.view-header((click)='toggleCollapsed()')
+    i.fa.fa-fw.fas.text-muted.chevron([class.fa-chevron-right]='collapsed', [class.fa-chevron-down]='!collapsed')
+    span.view-title.me-auto(translate) Explorer
+    .view-actions(*ngIf='!collapsed && state === "ready"', (click)='$event.stopPropagation()')
+        button.view-action((click)='startCreate("new-file")', [title]='"New file…"|translate')
+            i.far.fa-fw.fa-file
+        button.view-action((click)='startCreate("new-folder")', [title]='"New folder…"|translate')
+            i.far.fa-fw.fa-folder
+        button.view-action((click)='refresh()', [title]='"Refresh"|translate')
+            i.fas.fa-fw.fa-rotate
+        button.view-action((click)='collapseAll()', [title]='"Collapse folders"|translate')
+            i.far.fa-fw.fa-square-minus
+
+.view-body(
+    *ngIf='!collapsed',
+    tabindex='0',
+    (keydown)='onKeyDown($event)',
+    (contextmenu)='backgroundContextMenu($event)'
+)
+    .explorer-note(*ngIf='state === "no-terminal"', translate) Open a terminal to see the files of the folder it is in.
+    .explorer-note(*ngIf='state === "unsupported"', translate) This terminal has no files to show.
+    .explorer-note(*ngIf='state === "loading"', translate) Loading…
+    .explorer-note.text-danger(*ngIf='state === "error"') {{error}}
+
+    ng-container(*ngIf='state === "ready"')
+        //- The folder the terminal is in
+        .explorer-root([title]='root')
+            i.fas.fa-fw.fa-folder-open.me-1
+            span.no-wrap {{rootName}}
+        .explorer-note.small(*ngIf='showUntrackedNotice', translate) The shell has not said which folder it is in, so its home folder is shown. Reconnect to set it up, or see the README.
+
+        ng-container(*ngIf='isCreateAnchor(null)')
+            ng-container(*ngTemplateOutlet='editRow; context: {depth: 0}')
+        .explorer-note(*ngIf='!rows.length && !edit', translate) This folder is empty.
+
+        ng-container(*ngFor='let row of rows; trackBy: trackRow')
+            .explorer-row(
+                *ngIf='!(edit?.mode === "rename" && edit.entry?.path === row.entry.path); else editRowFor',
+                [class.selected]='selected === row.entry.path',
+                [style.paddingLeft.px]='8 + row.depth * 12',
+                [title]='tooltipFor(row.entry)',
+                (click)='onRowClick(row)',
+                (dblclick)='onRowDoubleClick(row)',
+                (contextmenu)='rowContextMenu(row, $event)'
+            )
+                i.fa.fa-fw.fas.text-muted.chevron(*ngIf='row.entry.isDirectory', [class.fa-chevron-right]='!row.expanded', [class.fa-chevron-down]='row.expanded')
+                span.chevron-space(*ngIf='!row.entry.isDirectory')
+                i.fa-fw.entry-icon([class]='iconFor(row) + " fa-fw entry-icon"', [class.folder]='row.entry.isDirectory')
+                span.entry-name.no-wrap([class.symlink]='row.entry.isSymlink') {{row.entry.name}}
+                i.fas.fa-circle-notch.fa-spin.ms-auto.text-muted(*ngIf='row.loading')
+            ng-template(#editRowFor)
+                ng-container(*ngTemplateOutlet='editRow; context: {depth: row.depth}')
+            ng-container(*ngIf='isCreateAnchor(row)')
+                ng-container(*ngTemplateOutlet='editRow; context: {depth: row.depth + 1}')
+
+//- The name of a new or renamed entry, typed in place
+ng-template(#editRow let-depth='depth')
+    .explorer-row.editing([style.paddingLeft.px]='8 + depth * 12')
+        span.chevron-space
+        i.fa-fw.entry-icon(
+            [class.far]='true',
+            [class.fa-file]='edit?.mode === "new-file" || (edit?.mode === "rename" && !edit?.entry?.isDirectory)',
+            [class.fa-folder]='edit?.mode === "new-folder" || (edit?.mode === "rename" && edit?.entry?.isDirectory)'
+        )
+        input.form-control.form-control-sm.entry-input(
+            #editInput,
+            type='text',
+            [(ngModel)]='edit!.value',
+            (keydown)='onEditKeyDown($event)',
+            (blur)='commitEdit()',
+            (click)='$event.stopPropagation()',
+            spellcheck='false'
+        )

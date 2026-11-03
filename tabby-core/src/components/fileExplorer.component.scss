@@ -1,0 +1,145 @@
+:host {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    font-size: .9em;
+}
+
+.view-header {
+    display: flex;
+    align-items: center;
+    flex: none;
+    height: 26px;
+    padding: 0 .25rem 0 .5rem;
+    font-size: .75rem;
+    font-weight: 600;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    cursor: pointer;
+    user-select: none;
+    border-top: 1px solid var(--theme-secondary);
+
+    .chevron {
+        font-size: .6rem;
+        margin-right: .25rem;
+    }
+
+    .view-actions {
+        display: none;
+        gap: 2px;
+    }
+
+    &:hover .view-actions {
+        display: flex;
+    }
+}
+
+.view-action {
+    border: none;
+    background: none;
+    color: inherit;
+    padding: 2px 3px;
+    border-radius: .2rem;
+    font-size: .75rem;
+    opacity: .8;
+    &:hover {
+        background-color: var(--theme-secondary);
+        opacity: 1;
+    }
+}
+
+.view-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-bottom: .5rem;
+    outline: none;
+    scrollbar-width: thin;
+}
+
+.explorer-root {
+    display: flex;
+    align-items: center;
+    padding: 2px 8px;
+    font-weight: 600;
+    opacity: .85;
+    i {
+        font-size: .8em;
+        opacity: .7;
+    }
+}
+
+.explorer-note {
+    padding: .25rem .75rem;
+    opacity: .6;
+    &.small {
+        font-size: .85em;
+    }
+}
+
+.explorer-row {
+    display: flex;
+    align-items: center;
+    height: 22px;
+    padding-right: .5rem;
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+
+    &:hover {
+        background-color: var(--theme-secondary);
+    }
+
+    &.selected {
+        background-color: var(--theme-secondary);
+        box-shadow: inset 2px 0 0 var(--theme-primary);
+    }
+
+    .chevron, .chevron-space {
+        width: 16px;
+        flex: none;
+        font-size: .55rem;
+        text-align: center;
+    }
+
+    .entry-icon {
+        flex: none;
+        margin-right: .35rem;
+        font-size: .85em;
+        opacity: .75;
+        &.folder {
+            color: #dcb67a;
+            opacity: 1;
+        }
+    }
+
+    .entry-name {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        &.symlink {
+            font-style: italic;
+        }
+    }
+
+    .entry-input {
+        height: 20px;
+        padding: 0 4px;
+        font-size: inherit;
+        border-radius: 2px;
+        border: 1px solid var(--theme-primary);
+    }
+
+    &.editing:hover {
+        background: none;
+    }
+}
+
+.view-body:focus .explorer-row.selected {
+    background-color: var(--theme-primary);
+    color: var(--theme-bg);
+    .entry-icon.folder {
+        color: inherit;
+    }
+}

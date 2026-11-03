@@ -1,6 +1,7 @@
 import { marker as _ } from '@biesbjerg/ngx-translate-extract-marker'
 import { Component, Input, Injector, Inject, Optional } from '@angular/core'
-import { BaseTabProcess, WIN_BUILD_CONPTY_SUPPORTED, isWindowsBuild, GetRecoveryTokenOptions } from 'tabby-core'
+import * as os from 'os'
+import { BaseTabProcess, WIN_BUILD_CONPTY_SUPPORTED, isWindowsBuild, GetRecoveryTokenOptions, ExplorerFileSystem, LocalExplorerFileSystem } from 'tabby-core'
 import { BaseTerminalTabComponent } from 'tabby-terminal'
 import { LocalProfile, SessionOptions, UACService } from '../api'
 import { Session } from '../session'
@@ -73,6 +74,14 @@ export class TerminalTabComponent extends BaseTerminalTabComponent<LocalProfile>
 
         this.setSession(session)
         this.recoveryStateChangedHint.next()
+    }
+
+    protected createExplorerFileSystem (): ExplorerFileSystem {
+        return new LocalExplorerFileSystem(this.platform)
+    }
+
+    protected async getExplorerFallbackDirectory (): Promise<string> {
+        return os.homedir()
     }
 
     async getRecoveryToken (options?: GetRecoveryTokenOptions): Promise<any> {

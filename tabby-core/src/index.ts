@@ -32,6 +32,7 @@ import { TransfersMenuComponent } from './components/transfersMenu.component'
 import { ProfileIconComponent } from './components/profileIcon.component'
 import { ProfileTreeComponent } from './components/profileTree.component'
 import { TailscaleMachineModalComponent } from './components/tailscaleMachineModal.component'
+import { FileExplorerComponent } from './components/fileExplorer.component'
 
 import { AutofocusDirective } from './directives/autofocus.directive'
 import { AlwaysVisibleTypeaheadDirective } from './directives/alwaysVisibleTypeahead.directive'
@@ -134,6 +135,7 @@ const PROVIDERS = [
         ProfileIconComponent,
         ProfileTreeComponent,
         TailscaleMachineModalComponent,
+        FileExplorerComponent,
         TabbyFormatedDatePipe,
     ],
     exports: [

@@ -1,9 +1,9 @@
-import { Observable, Subject, first, auditTime, debounce, interval } from 'rxjs'
+import { Observable, Subject, first, auditTime, debounce, interval, defer, startWith, switchMap, merge, EMPTY, debounceTime, map } from 'rxjs'
 import { Spinner } from 'cli-spinner'
 import colors from 'ansi-colors'
 import { NgZone, OnInit, OnDestroy, Injector, ViewChild, HostBinding, Input, ElementRef, InjectFlags, Component } from '@angular/core'
 import { trigger, transition, style, animate, AnimationTriggerMetadata } from '@angular/animations'
-import { AppService, ConfigService, BaseTabComponent, HostAppService, HotkeysService, NotificationsService, Platform, LogService, Logger, TabContextMenuItemProvider, SplitTabComponent, SubscriptionContainer, MenuItemOptions, PlatformService, HostWindowService, ResettableTimeout, TranslateService, ThemesService, FullyDefined } from 'tabby-core'
+import { AppService, ConfigService, BaseTabComponent, HostAppService, HotkeysService, NotificationsService, Platform, LogService, Logger, TabContextMenuItemProvider, SplitTabComponent, SubscriptionContainer, MenuItemOptions, PlatformService, HostWindowService, ResettableTimeout, TranslateService, ThemesService, FullyDefined, ExplorerSource, ExplorerFileSystem } from 'tabby-core'
 
 import { BaseSession } from '../session'
 
@@ -503,16 +503,39 @@ export class BaseTerminalTabComponent<P extends BaseTerminalProfile> extends Bas
     }
 
     /**
-     * Runs a command on the machine this terminal is connected to, without using the terminal.
-     * Null where the tab has no such connection (local shells).
+     * Feeds input into the active session
      */
-    getRemoteExec (): ((command: string, input?: Buffer) => Promise<string>) | null {
+    /** Override to show the files of the machine the terminal runs on in the explorer */
+    protected createExplorerFileSystem (): ExplorerFileSystem | null {
         return null
     }
 
-    /**
-     * Feeds input into the active session
-     */
+    /** The folder the explorer shows while the shell has not said where it is */
+    protected async getExplorerFallbackDirectory (): Promise<string | null> {
+        return null
+    }
+
+    private explorerSource: ExplorerSource | null | undefined
+
+    getExplorerSource (): ExplorerSource | null {
+        if (this.explorerSource === undefined) {
+            const fileSystem = this.createExplorerFileSystem()
+            this.explorerSource = fileSystem ? {
+                fileSystem,
+                // A report from the shell, or a pause in the output (a local shell that reports nothing)
+                changed$: defer(() => this.sessionChanged$.pipe(startWith(this.session))).pipe(
+                    switchMap(session => session ? merge(session.cwdReported$, session.output$.pipe(debounceTime(400))) : EMPTY),
+                    map(() => undefined),
+                ),
+                getCwd: async () => await this.session?.getWorkingDirectory() ?? null,
+                getFallbackDirectory: () => this.getExplorerFallbackDirectory(),
+                // The leading space keeps it out of the history where HISTCONTROL=ignorespace
+                changeDirectory: dir => this.sendInput(` cd -- '${dir.replace(/'/g, `'\\''`)}'\r`),
+            } : null
+        }
+        return this.explorerSource
+    }
+
     sendInput (data: string|Buffer): void {
         if (!(data instanceof Buffer)) {
             data = Buffer.from(data, 'utf-8')
@@ -678,6 +701,9 @@ export class BaseTerminalTabComponent<P extends BaseTerminalProfile> extends Bas
         this.output.complete()
         this.binaryOutput.complete()
         this.frontendReady.complete()
+        // Stops sending opened remote files back
+        const explorerFileSystem = this.explorerSource?.fileSystem as { dispose?: () => void } | undefined
+        explorerFileSystem?.dispose?.()
 
         super.destroy()
         if (this.session?.open) {

@@ -93,8 +93,6 @@ export abstract class Frontend {
 
     abstract supportsBracketedPaste (): boolean
 
-    /** Text of the rows on the live screen (ignoring scrollback), one string per row */
-    abstract getVisibleLines (): string[]
     abstract isAlternateScreenActive (): boolean
 
     /**

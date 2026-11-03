@@ -64,11 +64,9 @@ showProfileTree: true
 tsugite:
   # Used for Tailscale machines that have no username of their own; empty means the local username
   defaultUser: ''
-  showOffline: false
   machines:
     __nonStructural: true
-  assist:
-    sendOnEnter: true
-    notify: true
-    # Covers the assistant's own input box in the terminal while the panel's input is in use
-    hideTerminalInput: true
+  # Groups the user sorts Tailscale machines into: [{ id, name }]; a machine's group is in machines.<name>.group
+  groups: []
+  # Sets up the shells on SSH machines to report their folder (OSC 7), so the explorer can follow them
+  shellIntegration: true

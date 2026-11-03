@@ -16,6 +16,15 @@ h3 SSH
         (ngModelChange)='config.save()',
     )
 
+.form-line
+    .header
+        .title(translate) Let the explorer follow the folder you are in
+        .description(translate) On connecting, adds one line to ~/.bashrc or ~/.zshrc on the server (fish: a file in conf.d) so the shell reports its folder after each command. Turning this off does not remove what was added.
+    toggle(
+        [(ngModel)]='config.store.tsugite.shellIntegration',
+        (ngModelChange)='config.save()',
+    )
+
 .form-line(*ngIf='hostApp.platform === Platform.Windows')
     .header
         .title(translate) WinSCP path

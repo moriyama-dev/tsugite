@@ -1,12 +1,16 @@
 import { Observable, Subject } from 'rxjs'
 import stripAnsi from 'strip-ansi'
 import { Injector } from '@angular/core'
-import { LogService } from 'tabby-core'
+import { ConfigService, LogService } from 'tabby-core'
 import { BaseSession, UTF8SplitterMiddleware, InputProcessor } from 'tabby-terminal'
 import { SSHSession } from './ssh'
 import { openShellChannelForProfile } from './shellChannel'
 import { SSHProfile } from '../api'
 import * as russh from 'russh'
+import { SHELL_INTEGRATION_INSTALLER } from '../shellIntegration'
+
+/** A machine that does not answer in time gets its shell without the explorer's hook */
+const SHELL_INTEGRATION_TIMEOUT = 5000
 
 
 export class SSHShellSession extends BaseSession {
@@ -14,6 +18,7 @@ export class SSHShellSession extends BaseSession {
     get serviceMessage$ (): Observable<string> { return this.serviceMessage }
     private serviceMessage = new Subject<string>()
     private ssh: SSHSession|null
+    private config: ConfigService
 
     constructor (
         injector: Injector,
@@ -22,6 +27,7 @@ export class SSHShellSession extends BaseSession {
     ) {
         super(injector.get(LogService).create(`ssh-shell-${profile.options.host}-${profile.options.port}`))
         this.ssh = ssh
+        this.config = injector.get(ConfigService)
         this.setLoginScriptsOptions(this.profile.options)
         this.ssh.serviceMessage$.subscribe(m => this.serviceMessage.next(m))
         this.middleware.push(new UTF8SplitterMiddleware())
@@ -37,6 +43,9 @@ export class SSHShellSession extends BaseSession {
         this.ssh.willDestroy$.subscribe(() => {
             this.destroy()
         })
+
+        // Before the shell, which reads its start-up files only when it starts
+        await this.installShellIntegration()
 
         this.logger.debug('Opening shell')
 
@@ -80,6 +89,29 @@ export class SSHShellSession extends BaseSession {
         // command echo and anything the remote prints in response is dropped.
         if (this.profile.options.cwd) {
             this.changeInitialDirectory(this.profile.options.cwd)
+        }
+    }
+
+    /**
+     * Sets up the remote shells to report the folder they are in (OSC 7) for the explorer.
+     * Best effort: a machine without sh (or one that is slow) simply gets no explorer tracking.
+     */
+    private async installShellIntegration (): Promise<void> {
+        if (!this.config.store.tsugite.shellIntegration) {
+            return
+        }
+        let timer: ReturnType<typeof setTimeout> | undefined = undefined
+        try {
+            await Promise.race([
+                this.ssh!.exec('sh -s', Buffer.from(SHELL_INTEGRATION_INSTALLER)),
+                new Promise((_, reject) => {
+                    timer = setTimeout(() => reject(new Error('timed out')), SHELL_INTEGRATION_TIMEOUT)
+                }),
+            ])
+        } catch (error) {
+            this.logger.warn('Could not set up the shell integration:', error)
+        } finally {
+            clearTimeout(timer)
         }
     }
 

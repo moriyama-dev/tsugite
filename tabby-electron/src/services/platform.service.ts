@@ -198,6 +198,10 @@ export class ElectronPlatformService extends PlatformService {
         this.electron.shell.openPath(p)
     }
 
+    async trashItem (p: string): Promise<void> {
+        await this.electron.shell.trashItem(p)
+    }
+
     getOSRelease (): string {
         return os.release()
     }

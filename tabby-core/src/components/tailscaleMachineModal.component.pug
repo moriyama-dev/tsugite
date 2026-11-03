@@ -42,17 +42,6 @@
             button.btn.btn-secondary(*ngIf='settings.privateKey', (click)='settings.privateKey = undefined')
                 i.fas.fa-trash
 
-    .mb-3
-        label(translate) Claude Code working folder
-        input.form-control(
-            type='text',
-            [(ngModel)]='settings.workdir',
-            placeholder='~/projects/example',
-            [class.is-invalid]='!workdirValid',
-        )
-        .form-text(translate) The folder Claude Code starts in. Leave empty for the home folder.
-        .invalid-feedback(translate) Quotes, backslashes and $ cannot be used.
-
 .modal-footer
     button.btn.btn-secondary((click)='cancel()', translate) Cancel
-    button.btn.btn-primary((click)='ok()', [disabled]='!workdirValid', translate) Save
+    button.btn.btn-primary((click)='ok()', translate) Save

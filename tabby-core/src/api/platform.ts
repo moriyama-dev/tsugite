@@ -256,6 +256,11 @@ export abstract class PlatformService {
         throw new Error('Not implemented')
     }
 
+    /** Moves a file or folder on this computer to the trash */
+    async trashItem (path: string): Promise<void> {
+        throw new Error(`Cannot move ${path} to the trash on this platform`)
+    }
+
     getTheme (): PlatformTheme {
         return 'dark'
     }

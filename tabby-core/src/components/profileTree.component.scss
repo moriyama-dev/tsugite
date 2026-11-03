@@ -8,6 +8,63 @@ input {
     border: 1px solid var(--theme-secondary);
 }
 
+.sidebar-view {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    flex: 0 0 auto;
+    overflow: hidden;
+
+    &.fill {
+        flex: 1 1 0;
+    }
+}
+
+.connections {
+    &:not(.fill):not(.folded) {
+        flex-grow: 0;
+        flex-shrink: 1;
+    }
+
+    .view-content {
+        flex: 1 1 auto;
+        min-height: 0;
+    }
+}
+
+// Same look as the explorer's header
+.view-header {
+    display: flex;
+    align-items: center;
+    flex: none;
+    height: 26px;
+    padding: 0 .25rem 0 .5rem;
+    font-size: .75rem;
+    font-weight: 600;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    cursor: pointer;
+    user-select: none;
+
+    .chevron {
+        font-size: .6rem;
+        margin-right: .25rem;
+    }
+}
+
+.sidebar-splitter {
+    flex: none;
+    height: 4px;
+    margin: -2px 0;
+    position: relative;
+    z-index: 2;
+    cursor: row-resize;
+    &:hover {
+        background-color: var(--theme-primary);
+        opacity: .5;
+    }
+}
+
 .profile-tree {
     max-height: 100%;
     overflow-y: scroll;
@@ -42,16 +99,6 @@ input {
         }
     }
 
-    .assist-badge {
-        font-size: .7rem;
-        color: #e2c79c;
-        flex: none;
-
-        &.waiting {
-            color: #c98a2e;
-        }
-    }
-
     .status-dot {
         font-size: .45rem;
         color: var(--theme-fg-more-2);
@@ -64,6 +111,34 @@ input {
 
     .tree-item.offline > span {
         opacity: .5;
+    }
+
+    .tree-note-nested {
+        padding-left: 68px;
+    }
+
+    .section-icon {
+        font-size: .8rem;
+        opacity: .8;
+        &.fa-circle {
+            font-size: .55rem;
+        }
+        &.online {
+            color: #4caf50;
+            opacity: 1;
+        }
+    }
+
+    .section-count {
+        font-size: .75em;
+        opacity: .5;
+        flex: none;
+    }
+
+    .tree-item.drop-target {
+        outline: 1px dashed var(--theme-primary);
+        outline-offset: -1px;
+        background-color: var(--theme-secondary);
     }
 
     .tree-item {

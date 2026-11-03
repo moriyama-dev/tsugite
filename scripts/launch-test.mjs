@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // Launches a packaged build and checks that it comes up: the window loads, a local
-// terminal opens with a running shell, the Tailscale section settles and nothing crashes.
+// terminal opens with a running shell, the Tailscale section settles, the explorer shows the
+// terminal's folder and nothing crashes.
 //
 // usage: node scripts/launch-test.mjs <app executable> [screenshot.png]
 //
@@ -137,6 +138,10 @@ try {
             // What Tailscale.app's binary prints when it took itself for the GUI (see tailscale.service.ts)
             check(!notes[0].includes('GUI failed to start'), 'the Tailscale CLI ran as a CLI, not as the GUI')
         }
+
+        // The explorer follows the local terminal, which starts in the home folder
+        const explorer = await waitFor('the explorer', 30000, () => evaluate('document.querySelector("file-explorer .explorer-root")?.textContent.trim() || ""'))
+        check(!!explorer, `the explorer shows the terminal's folder${explorer ? ` (${explorer})` : ''}`)
 
         // Give a late crash a chance to show up
         await sleep(5000)

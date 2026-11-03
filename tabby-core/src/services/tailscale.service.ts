@@ -20,7 +20,13 @@ export interface TailscaleMachineSettings {
     user?: string
     auth?: 'tailscale' | 'key'
     privateKey?: string
-    workdir?: string
+    /** Id of the user's group the machine is sorted into */
+    group?: string
+}
+
+export interface TailscaleGroup {
+    id: string
+    name: string
 }
 
 export type TailscaleState = 'loading' | 'ready' | 'not-installed' | 'stopped' | 'error'
@@ -136,6 +142,54 @@ export class TailscaleService {
         await this.config.save()
     }
 
+    getGroups (): TailscaleGroup[] {
+        return [...this.config.store.tsugite.groups ?? []]
+            .map(g => ({ id: g.id, name: g.name }))
+            .sort((a, b) => a.name.localeCompare(b.name))
+    }
+
+    /** The machine's group, or null when it has none or the group was deleted */
+    getGroupId (machine: TailscaleMachine): string | null {
+        const id = this.config.store.tsugite.machines[machine.name]?.group
+        return id && this.getGroups().some(g => g.id === id) ? id : null
+    }
+
+    async createGroup (name: string): Promise<TailscaleGroup> {
+        const group = { id: `g${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`, name }
+        this.config.store.tsugite.groups = [...this.config.store.tsugite.groups ?? [], group]
+        await this.config.save()
+        return group
+    }
+
+    async renameGroup (id: string, name: string): Promise<void> {
+        this.config.store.tsugite.groups = (this.config.store.tsugite.groups ?? []).map(g => g.id === id ? { id, name } : { id: g.id, name: g.name })
+        await this.config.save()
+    }
+
+    /** The machines in it go back to the online and offline lists */
+    async deleteGroup (id: string): Promise<void> {
+        this.config.store.tsugite.groups = (this.config.store.tsugite.groups ?? []).filter(g => g.id !== id).map(g => ({ id: g.id, name: g.name }))
+        for (const [name, settings] of Object.entries(this.config.store.tsugite.machines ?? {})) {
+            if ((settings as TailscaleMachineSettings | null)?.group === id) {
+                const rest = { ...settings as TailscaleMachineSettings }
+                delete rest.group
+                this.config.store.tsugite.machines[name] = rest
+            }
+        }
+        await this.config.save()
+    }
+
+    /** Null takes the machine out of its group */
+    async setGroup (machine: TailscaleMachine, groupId: string | null): Promise<void> {
+        const settings = this.getSettings(machine)
+        if (groupId) {
+            settings.group = groupId
+        } else {
+            delete settings.group
+        }
+        await this.saveSettings(machine, settings)
+    }
+
     /** Builds the SSH profile used to open a terminal on the machine */
     toProfile (machine: TailscaleMachine): any {
         const settings = this.getSettings(machine)
@@ -153,7 +207,6 @@ export class TailscaleService {
                 // Leaving auth unset tries "none" first (which is how Tailscale SSH logs in), then the agent and keys
                 auth: null,
                 privateKeys: auth === 'key' && settings.privateKey ? [settings.privateKey] : [],
-                claudeWorkdir: settings.workdir ?? '',
             },
         }
     }
