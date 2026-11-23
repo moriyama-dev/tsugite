@@ -98,3 +98,40 @@ jobs:
 
       - name: Launch the app
         run: xvfb-run -a node scripts/launch-test.mjs dist/linux-unpacked/tsugite
+
+  cask:
+    # Installs the cask from this checkout with Homebrew, the way people get it.
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Update Homebrew
+        run: |
+          brew update
+          brew --version
+
+      - name: Check the syntax
+        run: ruby -c Casks/tsugite.rb
+
+      - name: Install with Homebrew
+        run: |
+          set -euo pipefail
+          brew tap moriyama-dev/tsugite "${GITHUB_WORKSPACE}"
+          brew install --cask moriyama-dev/tsugite/tsugite 2>&1 | tee "${RUNNER_TEMP}/brew-install.log"
+          if grep -F 'is deprecated' "${RUNNER_TEMP}/brew-install.log"; then
+            echo "Homebrew reports a deprecated cask syntax" >&2
+            exit 1
+          fi
+          test -d /Applications/Tsugite.app
+          if xattr -p com.apple.quarantine /Applications/Tsugite.app 2> /dev/null; then
+            echo "The quarantine flag is still set" >&2
+            exit 1
+          fi
+          brew list --cask --versions tsugite
+          brew uninstall --cask moriyama-dev/tsugite/tsugite
+
+      - name: Check the style
+        run: brew style Casks/tsugite.rb
