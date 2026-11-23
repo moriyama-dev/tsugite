@@ -13,15 +13,14 @@ cask "tsugite" do
   desc "Terminal with Tailscale machines and a file explorer that follows your shell"
   homepage "https://github.com/moriyama-dev/tsugite"
 
-  depends_on macos: ">= :monterey"
+  depends_on macos: :monterey
 
   app "Tsugite.app"
 
   # The app is not notarized: remove the quarantine flag so that it opens
   # without the "cannot be verified" warning.
-  postflight do
-    system_command "/usr/bin/xattr",
-                   args: ["-dr", "com.apple.quarantine", "#{appdir}/Tsugite.app"]
+  postflight_steps do
+    run "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "{{appdir}}/Tsugite.app"]
   end
 
   zap trash: "~/Library/Application Support/tsugite"
